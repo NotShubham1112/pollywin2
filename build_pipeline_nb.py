@@ -690,7 +690,69 @@ for tt in ELECTRONIC_TARGETS:
     print(f"  efn {tt}: RMSE={r:.4f}")
 save_oof_artifact("efn", efn_oof, efn_te)""")
 
-M("""## Layer 6 — GNN branch (pure-PyTorch GIN message passing)
+M("""## Layer 6 — Tg isolation (dedicated single-target TgNN)
+
+Tg is statistically disconnected from the electronic targets (shared-polymer overlap < 5%), so it
+gets its own small MLP `256 -> 128 -> 64` and its own stack. No shared trunk, no cross-target
+features to or from tg.""")
+P("""class TgNN(nn.Module):
+    def __init__(self, n_in, hidden=256, latent=64):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_in, hidden), nn.BatchNorm1d(hidden), nn.SiLU(), nn.Dropout(0.3),
+            nn.Linear(hidden, hidden//2), nn.BatchNorm1d(hidden//2), nn.SiLU(), nn.Dropout(0.3),
+            nn.Linear(hidden//2, latent), nn.SiLU(),
+            nn.Linear(latent, 1),
+        )
+    def forward(self, x):
+        return self.net(x)
+
+def tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup_, folds, epochs, bs=128, lr=1e-3, wd=1e-4):
+    dev = get_torch_device()
+    m = (dedup_["target_type"] == "tg").values
+    idx = np.where(m)[0]
+    oof = np.full(m.sum(), np.nan)
+    te_pred = np.zeros(len(Xte_s))
+    Xte_t = torch.tensor(Xte_s, dtype=torch.float32, device=dev)
+    for f in range(GLOBAL_FOLDS):
+        tr_l = np.where(folds[idx] != f)[0]; va_l = np.where(folds[idx] == f)[0]
+        tr_idx, va_idx = idx[tr_l], idx[va_l]
+        torch.manual_seed(42)
+        model = TgNN(Xtr_s.shape[1]).to(dev)
+        opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
+        sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+        Xt = torch.tensor(Xtr_s[tr_idx], dtype=torch.float32, device=dev)
+        yt = torch.tensor(Y[tr_idx], dtype=torch.float32, device=dev).view(-1, 1)
+        n = len(tr_idx)
+        for ep in range(epochs):
+            model.train()
+            perm = torch.randperm(n, device=dev)
+            for i in range(0, n, bs):
+                bi = perm[i:i+bs]
+                opt.zero_grad()
+                loss = F.mse_loss(model(Xt[bi]), yt[bi])
+                loss.backward(); opt.step()
+            sched.step()
+            if (ep+1) % 10 == 0:
+                print(f"    tgnn ep {ep+1}/{epochs} loss {loss.item():.4f}")
+        model.eval()
+        with torch.no_grad():
+            oof[va_l] = model(torch.tensor(Xtr_s[va_idx], dtype=torch.float32, device=dev)).cpu().numpy().ravel()
+            te_pred += model(Xte_t).cpu().numpy().ravel() / GLOBAL_FOLDS
+        del model; gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    return model, oof, te_pred
+
+print("Training Tg NN (isolated)...")
+t0 = time.time()
+tg_model, tg_oof, tg_te = tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup, folds, epochs=TGNN_EPOCHS)
+print(f"TgNN done in {time.time()-t0:.0f}s")
+r = record("tgnn_tg", "tg", tg_oof, tg_te)
+print(f"  tgnn tg: RMSE={r:.4f}")
+save_oof_artifact("tgnn", {"tg": tg_oof}, {"tg": tg_te})""")
+
+M("""## Layer 7 — GNN branch (pure-PyTorch GIN message passing)
 
 No external GNN library required. Builds the polymer graph from RDKit:
 - node features: atom symbol, aromaticity, degree, charge, neighbours

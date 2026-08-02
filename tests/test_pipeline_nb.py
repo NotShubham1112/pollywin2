@@ -49,6 +49,12 @@ def test_efn_replaces_mtnn():
     assert "train_multitask" not in code
     assert "MultiTaskNN" not in code
 
+def test_tgnn_cell():
+    code, _ = _build()
+    assert "class TgNN" in code
+    assert "def tgnn_fit_predict" in code
+    assert "save_oof_artifact(\"tgnn\"" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
