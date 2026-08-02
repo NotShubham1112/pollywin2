@@ -1,0 +1,9 @@
+metric,value
+n_unique_smiles,6565
+n_dup_smiles,844
+n_rows_in_dup_groups,1262
+smiles_shared_across_target_types,415
+conflicting_labels_same_smiles_type,3
+n_dup_canonical,844
+canon_shared_across_target_types,415
+test_smiles_overlapping_train,839

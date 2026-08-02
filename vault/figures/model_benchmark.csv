@@ -1,0 +1,16 @@
+model,rmse,seconds,target
+Ridge,73.057,2.2,tg
+RandomForest,39.0528,48.3,tg
+HistGB,35.9248,84.9,tg
+LightGBM,35.2915,12.0,tg
+XGBoost,35.1819,29.7,tg
+Ridge,0.9249,1.0,egc
+RandomForest,0.5583,19.7,egc
+HistGB,0.5285,76.5,egc
+LightGBM,0.5238,9.4,egc
+XGBoost,0.5014,22.4,egc
+Ridge,2.4785,0.6,small5
+RandomForest,2.3737,8.8,small5
+HistGB,2.5508,73.2,small5
+LightGBM,2.5699,5.4,small5
+XGBoost,2.4545,12.5,small5

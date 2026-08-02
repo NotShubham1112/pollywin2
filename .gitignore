@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# smoke-test validation copy (regenerated via build_pipeline_nb.py)
+smoke.ipynb
+
+# pipeline run artifacts (regenerable caches and model weights)
+vault/pipeline_out/*.pkl
+vault/pipeline_out/*.pt
