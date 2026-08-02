@@ -914,9 +914,8 @@ def cross_oof_features(tt):
 
 def cross_te_features(tt):
     feats, cols = [], []
-    m_te = (test["target_type"] == tt).values
     for ct in CROSS_MAP[tt]:
-        feats.append(np.asarray(L15_TE[ct], dtype=np.float32)[m_te])
+        feats.append(np.asarray(L15_TE[ct], dtype=np.float32))
         cols.append(f"cross_{ct}")
     if not feats:
         return None, None
@@ -935,7 +934,7 @@ for tt in TARGETS:
     Z2 = np.column_stack([Z1, Zrel] + ([Zcr] if Zcr is not None else []))
     cols = c1 + crel + (ccr or [])
     Zte1 = np.column_stack([test_store[c] for c in c1])
-    Zte_rel = np.column_stack([test_store[c] for c in crel])
+    Zte_rel = np.column_stack([Zte1.mean(1), Zte1.std(1), Zte1.max(1), Zte1.min(1)])
     Zte_cr, _ = cross_te_features(tt)
     Zte2 = np.column_stack([Zte1, Zte_rel] + ([Zte_cr] if Zte_cr is not None else []))
     pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
