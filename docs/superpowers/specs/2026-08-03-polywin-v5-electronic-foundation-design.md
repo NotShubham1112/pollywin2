@@ -78,8 +78,11 @@ by inflated v4 numbers.
 - **Change:** save `folds` (plus the dedup index mapping) to `WORK/folds.csv` on first compute;
   if the file already exists, load it and never regenerate. Every downstream model (GBMs, EFN,
   tgnn, level-1.5 stack, level-2 meta) must use the identical fold assignment.
-- NN fold count: 10 folds on GPU, 5 folds on CPU (fresh GroupKFold(5) on canon for the NN path
-  only; GBM path always uses the saved 10-fold assignment).
+- **Single production fold definition:** `GLOBAL_FOLDS = 10` for EVERY model (GBMs, EFN, tgnn,
+  level-1.5 stack, level-2 meta). Never mix a 5-fold EFN OOF with 10-fold GBM OOF in the same
+  stack — that makes cross-target OOF, reliability features, and meta-model features impossible
+  to reason about.
+- Smoke runs only: `GLOBAL_FOLDS = 5` everywhere. Production: 10 folds always.
 
 ### 4.3 Auxiliary physics tasks (new cell after feature factory)
 
@@ -111,6 +114,10 @@ task with near-zero variance.
 - Loss: per-target inverse-σ weighted MSE (target standard deviations fit on fold-train rows),
   so every target — especially the small ones — receives real gradient signal. Total loss =
   weighted real-target MSE + λ_aux·aux MSE (λ_aux ≈ 0.3).
+- **Per-head target-presence masking.** Each electronic target is present only on its own subset
+  of rows; aux tasks are present on all rows. Implement per-head masks
+  `mask = ~np.isnan(y_target)` and compute each head's loss only over its present labels.
+  Missing target labels are **never imputed**.
 - **Honest OOF:** one model per fold; fold-train → predict held-out fold; test predictions
   averaged across fold models. Same global fold partition as GBMs.
 - EFN width is fixed at 512/256/128 — do not increase (7406 rows; a larger net is unlikely to help).
@@ -181,6 +188,24 @@ fold-safe OOF for training and from fold-averaged test predictions for the test 
   local vault files.
 - Fig-04 / Fig-09 model comparisons use the new model names and level-2 final RMSE.
 - All other figures unchanged (01–07, 09).
+
+### 4.11 Artifact persistence
+
+Persist every intermediate OOF artifact to `WORK/` so post-hoc attribution analysis is
+straightforward when leaderboard scores move:
+
+    folds.csv                (global fold assignment + dedup index)
+    oof_lgb.parquet          (per-target OOF + test preds for each base model)
+    oof_cat.parquet
+    oof_xgb.parquet
+    oof_hgb.parquet
+    oof_efn.parquet
+    oof_tgnn.parquet
+    l15_ridge.parquet        (level-1.5 stack OOF + test)
+    final_meta.parquet       (level-2 final OOF + test)
+
+These enable answering: which model added signal, which target improved, did EFN actually
+help, did cross-target features help.
 
 ## 5. Deferred (post-v5, in priority order)
 
