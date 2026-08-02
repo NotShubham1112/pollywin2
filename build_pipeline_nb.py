@@ -35,6 +35,15 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 """)
 
 P("""import os, sys, gc, time, json, warnings, random
+import subprocess, importlib.util
+def ensure_pkg(pkg, import_name=None):
+    name = import_name or pkg
+    if importlib.util.find_spec(name) is None:
+        print("installing", pkg)
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "--disable-pip-version-check", pkg])
+for _p, _n in [("rdkit", "rdkit"), ("catboost", "catboost"),
+               ("lightgbm", "lightgbm"), ("xgboost", "xgboost")]:
+    ensure_pkg(_p, _n)
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -44,6 +53,16 @@ import seaborn as sns
 warnings.filterwarnings("ignore")
 np.random.seed(42); random.seed(42)
 import torch
+
+def get_torch_device():
+    if torch.cuda.is_available():
+        try:
+            _t = torch.zeros(1, device="cuda"); _t = _t + 1
+            torch.cuda.synchronize(); del _t
+            return torch.device("cuda")
+        except Exception as _e:
+            print("CUDA probe failed -> using CPU:", str(_e)[:120])
+    return torch.device("cpu")
 
 ON_KAGGLE = os.path.exists("/kaggle")
 if ON_KAGGLE:
@@ -448,7 +467,7 @@ class MultiTaskNN(nn.Module):
         return out
 
 def train_multitask(X_all_, Y_all_, types_, Xte_, te_types_, epochs=40, bs=128, lr=1e-3, wd=1e-4):
-    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dev = get_torch_device()
     n_in = X_all_.shape[1]
     model = MultiTaskNN(n_in).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
@@ -555,7 +574,7 @@ def build_graph(mol):
     return torch.tensor(feat, dtype=torch.float32), torch.tensor(adj, dtype=torch.float32)
 
 def train_gnn(dedup_, test_, epochs=30, lr=1e-3, latent=32):
-    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    dev = get_torch_device()
     graphs_tr = [build_graph(parse_mol(s)) for s in dedup_["smiles"]]
     graphs_te = [build_graph(parse_mol(s)) for s in test_["smiles"]]
     feats = [g[0].shape[1] for g in graphs_tr if g]
