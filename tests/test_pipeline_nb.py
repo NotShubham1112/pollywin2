@@ -61,6 +61,15 @@ def test_gnn_removed():
     assert "PolymerGNN" not in code
     assert "GNN branch archived" in code
 
+def test_stacking_levels():
+    code, _ = _build()
+    assert "BASE_MODELS_ELEC" in code
+    assert "BASE_MODELS_TG" in code
+    assert "CROSS_MAP" in code
+    assert "FINAL_OOF" in code
+    assert "l15_ridge.parquet" in code
+    assert "final_meta.parquet" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

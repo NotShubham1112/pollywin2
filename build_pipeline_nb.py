@@ -817,66 +817,154 @@ if USE_PSEUDO and pi1m_path and os.path.exists(pi1m_path):
 else:
     print("Pseudo-labelling skipped (USE_PSEUDO=False or PI1M unavailable).")""")
 
-M("""## Layer 9 — Stacking (Ridge / ElasticNet / CatBoost meta-model)
+M("""## Layer 9 — Stacking (level-1.5 Ridge + level-2 meta with reliability + cross-target features)
 
-Level-1 base models: `lgb_*`, `cat_*`, `xgb_*`, `hgb_*`, `mtnn`, `gnn`.
-Level-2 meta-model trained per target on **OOF predictions only**.
-The stack output becomes the final prediction.""")
-P("""from sklearn.linear_model import Ridge, ElasticNet
+Level-1 base models per target: electronic = `lgb, cat, xgb, hgb, efn`; tg = `lgb, cat, xgb, hgb, tgnn`.
+Level-1.5: per-target Ridge stack on the target's own base-model OOFs (as v4).
+Level-2 (electronic cluster only): per-target Ridge meta on own base OOFs + reliability features
+(mean/std/max/min disagreement) + cross-target level-1.5 stack OOFs for correlated targets
+(fold-safe because all targets share one global canonical fold partition). Tg gets no cross features.
+Level-2 output = final predictions.""")
+P("""from sklearn.linear_model import Ridge
 
-BASE_MODELS = ["lgb","cat","xgb","hgb","mtnn","gnn"]
+BASE_MODELS_ELEC = ["lgb","cat","xgb","hgb","efn"]
+BASE_MODELS_TG = ["lgb","cat","xgb","hgb","tgnn"]
 
-def build_stack_features(oof_store, tt):
-    feats = []
-    cols = []
-    for b in BASE_MODELS:
-        # gbm experts stored as ("lgb_tg", tt); nn models stored as ("mtnn", tt)
-        k = (b + "_" + tt, tt) if b not in ("mtnn", "gnn") else (b, tt)
+def base_models_for(tt):
+    return BASE_MODELS_TG if tt == "tg" else BASE_MODELS_ELEC
+
+def store_key(b, tt):
+    return (b + "_" + tt, tt)
+
+def build_stack_features(oof_store, tt, models):
+    feats, cols = [], []
+    for b in models:
+        k = store_key(b, tt)
         if k in oof_store:
             feats.append(oof_store[k]); cols.append(k)
     if len(feats) == 0:
         return None, None
     return np.column_stack(feats), cols
 
-STACKED_OOF = {}; STACKED_TE = {}
-print("Stacking meta-models...")
+# ---- level 1.5: per-target Ridge on own base OOFs ----
+L15_OOF = {}; L15_TE = {}
+print("Level-1.5 Ridge stack (per target, own base OOFs)...")
 for tt in TARGETS:
     m = (dedup["target_type"] == tt).values
     m, idx, splits = get_splits(tt)
-    Z, cols = build_stack_features(oof_store, tt)
+    Z, cols = build_stack_features(oof_store, tt, base_models_for(tt))
     if Z is None:
         print(f"  {tt}: no base features"); continue
     Zte = np.column_stack([test_store[c] for c in cols])
-
-    # out-of-fold stack. Z is ordered by target-subset rows, so map global fold
-    # indices (idx positions) to local subset positions before slicing.
     pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
     oof = np.zeros(m.sum()); te_pred = np.zeros(len(Zte))
     for tr, va in splits:
         tr_l, va_l = pos[tr], pos[va]
         sr = StandardScaler().fit(Z[tr_l]); Ztr_s = sr.transform(Z[tr_l]); Zva_s = sr.transform(Z[va_l])
-        meta = Ridge(alpha=10.0)
-        meta.fit(Ztr_s, Y[idx][tr_l])
+        meta = Ridge(alpha=10.0); meta.fit(Ztr_s, Y[idx][tr_l])
         oof[va_l] = meta.predict(Zva_s)
         te_pred += meta.predict(sr.transform(Zte)) / len(splits)
-    STACKED_OOF[tt] = oof; STACKED_TE[tt] = te_pred
+    L15_OOF[tt] = oof; L15_TE[tt] = te_pred
     r = rmse_metric(Y[m], oof)
-    print(f"  stack {tt}: RMSE={r:.4f}  (cols={cols})")
+    print(f"  l15 {tt}: RMSE={r:.4f}  (cols={cols})")
 
-# final per-target RMSE summary
-def store_key(b, tt):
-    return (b + "_" + tt, tt) if b not in ("mtnn", "gnn") else (b, tt)
+# ---- level 2: reliability + cross-target OOF features ----
+CROSS_MAP = {
+    "eps": ["nc","egc","egb","eea"],
+    "nc": ["eps","egb","egc","ei"],
+    "egc": ["egb","eea","nc","eps","ei"],
+    "egb": ["egc","nc","eea","eps","ei"],
+    "ei": ["egc","egb","nc"],
+    "eea": ["egc","egb","eps"],
+    "tg": [],
+}
 
-print("\\n==== FINAL LEADERBOARD (OOF RMSE) ====")
+def reliability_features(tt, models):
+    Z, cols = build_stack_features(oof_store, tt, models)
+    if Z is None:
+        return None, None
+    feats = np.column_stack([Z.mean(1), Z.std(1), Z.max(1), Z.min(1)])
+    return feats, ["rel_mean", "rel_std", "rel_max", "rel_min"]
+
+def cross_oof_features(tt):
+    feats, cols = [], []
+    m_tt = (dedup["target_type"] == tt).values
+    for ct in CROSS_MAP[tt]:
+        m_ct = (dedup["target_type"] == ct).values
+        c2o = dict(zip(dedup.loc[m_ct, "canon"].values, L15_OOF[ct]))
+        vals = np.array([c2o.get(c, np.nan) for c in dedup.loc[m_tt, "canon"].values], dtype=np.float32)
+        miss = np.isnan(vals).astype(np.float32)
+        vals = np.nan_to_num(vals, nan=float(np.nanmean(L15_OOF[ct])))
+        feats += [vals, miss]; cols += [f"cross_{ct}", f"cross_{ct}_miss"]
+    if not feats:
+        return None, None
+    return np.column_stack(feats), cols
+
+def cross_te_features(tt):
+    feats, cols = [], []
+    m_te = (test["target_type"] == tt).values
+    for ct in CROSS_MAP[tt]:
+        feats.append(np.asarray(L15_TE[ct], dtype=np.float32)[m_te])
+        cols.append(f"cross_{ct}")
+    if not feats:
+        return None, None
+    return np.column_stack(feats), cols
+
+FINAL_OOF = {}; FINAL_TE = {}
+print("\\nLevel-2 meta (own base + reliability + cross-target OOF)...")
+for tt in TARGETS:
+    m = (dedup["target_type"] == tt).values
+    m, idx, splits = get_splits(tt)
+    Z1, c1 = build_stack_features(oof_store, tt, base_models_for(tt))
+    if Z1 is None:
+        print(f"  {tt}: no base features"); continue
+    Zrel, crel = reliability_features(tt, base_models_for(tt))
+    Zcr, ccr = cross_oof_features(tt)
+    Z2 = np.column_stack([Z1, Zrel] + ([Zcr] if Zcr is not None else []))
+    cols = c1 + crel + (ccr or [])
+    Zte1 = np.column_stack([test_store[c] for c in c1])
+    Zte_rel = np.column_stack([test_store[c] for c in crel])
+    Zte_cr, _ = cross_te_features(tt)
+    Zte2 = np.column_stack([Zte1, Zte_rel] + ([Zte_cr] if Zte_cr is not None else []))
+    pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+    oof = np.zeros(m.sum()); te_pred = np.zeros(len(Zte2))
+    for tr, va in splits:
+        tr_l, va_l = pos[tr], pos[va]
+        sr = StandardScaler().fit(Z2[tr_l]); Z2tr = sr.transform(Z2[tr_l]); Z2va = sr.transform(Z2[va_l])
+        meta = Ridge(alpha=10.0); meta.fit(Z2tr, Y[idx][tr_l])
+        oof[va_l] = meta.predict(Z2va)
+        te_pred += meta.predict(sr.transform(Zte2)) / len(splits)
+    FINAL_OOF[tt] = oof; FINAL_TE[tt] = te_pred
+    r = rmse_metric(Y[m], oof)
+    print(f"  final {tt}: RMSE={r:.4f}  (n_feats={len(cols)})")
+
+# ---- persistence ----
+l15_parts, fin_parts = [], []
+for tt in TARGETS:
+    m = (dedup["target_type"] == tt).values
+    m_te = (test["target_type"] == tt).values
+    if tt in L15_OOF:
+        l15_parts.append(pd.DataFrame({"target": tt, "dedup_index": np.where(m)[0],
+                                       "l15_oof": L15_OOF[tt], "l15_test": np.asarray(L15_TE[tt])[m_te]}))
+    if tt in FINAL_OOF:
+        fin_parts.append(pd.DataFrame({"target": tt, "dedup_index": np.where(m)[0],
+                                       "final_oof": FINAL_OOF[tt], "final_test": np.asarray(FINAL_TE[tt])[m_te]}))
+pd.concat(l15_parts).to_parquet(os.path.join(WORK, "l15_ridge.parquet"), index=False)
+pd.concat(fin_parts).to_parquet(os.path.join(WORK, "final_meta.parquet"), index=False)
+print("saved l15_ridge.parquet, final_meta.parquet")
+
+# ---- final per-target RMSE summary ----
+print("\\n==== FINAL LEADERBOARD (honest OOF RMSE) ====")
 summary = []
 for tt in TARGETS:
     m = (dedup["target_type"] == tt).values
     row = {"target": tt}
-    for b in BASE_MODELS:
+    for b in base_models_for(tt):
         k = store_key(b, tt)
         if k in oof_store:
             row[b] = round(rmse_metric(Y[m], oof_store[k]), 4)
-    if tt in STACKED_OOF: row["stack"] = round(rmse_metric(Y[m], STACKED_OOF[tt]), 4)
+    if tt in L15_OOF: row["l15"] = round(rmse_metric(Y[m], L15_OOF[tt]), 4)
+    if tt in FINAL_OOF: row["final"] = round(rmse_metric(Y[m], FINAL_OOF[tt]), 4)
     summary.append(row)
     print(row)
 pd.DataFrame(summary).to_csv(os.path.join(WORK, "final_leaderboard.csv"), index=False)""")
