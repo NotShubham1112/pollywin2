@@ -55,6 +55,12 @@ def test_tgnn_cell():
     assert "def tgnn_fit_predict" in code
     assert "save_oof_artifact(\"tgnn\"" in code
 
+def test_gnn_removed():
+    code, _ = _build()
+    assert "class GINConv" not in code
+    assert "PolymerGNN" not in code
+    assert "GNN branch archived" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

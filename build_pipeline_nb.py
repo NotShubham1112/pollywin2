@@ -753,124 +753,13 @@ r = record("tgnn_tg", "tg", tg_oof, tg_te)
 print(f"  tgnn tg: RMSE={r:.4f}")
 save_oof_artifact("tgnn", {"tg": tg_oof}, {"tg": tg_te})""")
 
-M("""## Layer 7 — GNN branch (pure-PyTorch GIN message passing)
+M("""## Layer 7 — GNN (archived, not in runtime path)
 
-No external GNN library required. Builds the polymer graph from RDKit:
-- node features: atom symbol, aromaticity, degree, charge, neighbours
-- edge features: bond type
-Runs 3 GINConv message-passing layers + global mean pooling -> MLP head.
-Trained jointly on all targets via a shared encoder (multi-task), GPU-accelerated.""")
-P("""class GINConv(nn.Module):
-    def __init__(self, in_dim, out_dim):
-        super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(in_dim, out_dim), nn.BatchNorm1d(out_dim), nn.SiLU())
-        self.eps = nn.Parameter(torch.tensor(0.0))
-    def forward(self, x, adj):
-        agg = torch.mm(adj, x)
-        return self.mlp((1 + self.eps) * x + agg)
-
-class PolymerGNN(nn.Module):
-    def __init__(self, n_feat, hidden=64, latent=32):
-        super().__init__()
-        self.embed = nn.Linear(n_feat, hidden)
-        self.conv1 = GINConv(hidden, hidden)
-        self.conv2 = GINConv(hidden, hidden)
-        self.conv3 = GINConv(hidden, hidden)
-        self.head = nn.Linear(hidden, latent)
-        self.out = nn.Linear(latent, 1)
-    def forward(self, x, adj):
-        h = self.embed(x)
-        h = self.conv1(h, adj); h = self.conv2(h, adj); h = self.conv3(h, adj)
-        h = F.relu(h)
-        g = h.mean(dim=0)   # global mean pooling over nodes -> graph vector
-        z = F.relu(self.head(g))
-        return self.out(z), z
-
-def build_graph(mol):
-    if mol is None:
-        return None
-    amap = {"C":0,"N":1,"O":2,"S":3,"F":4,"Si":5,"Cl":6,"Br":7,"P":8,"I":9,"other":10}
-    n = mol.GetNumAtoms()
-    feat = np.zeros((n, 6), dtype=np.float32)
-    for i, a in enumerate(mol.GetAtoms()):
-        feat[i, 0] = amap.get(a.GetSymbol(), 10) / 10.0
-        feat[i, 1] = 1.0 if a.GetIsAromatic() else 0.0
-        feat[i, 2] = a.GetDegree() / 6.0
-        feat[i, 3] = (a.GetFormalCharge() + 3) / 6.0
-        feat[i, 4] = a.GetTotalNumHs() / 6.0
-        feat[i, 5] = a.GetImplicitValence() / 6.0
-    adj = np.zeros((n, n), dtype=np.float32)
-    for b in mol.GetBonds():
-        i, j = b.GetBeginAtomIdx(), b.GetEndAtomIdx()
-        adj[i, j] = 1.0; adj[j, i] = 1.0
-    return torch.tensor(feat, dtype=torch.float32), torch.tensor(adj, dtype=torch.float32)
-
-def train_gnn(dedup_, test_, epochs=30, lr=1e-3, latent=32):
-    dev = get_torch_device()
-    graphs_tr = [build_graph(parse_mol(s)) for s in dedup_["smiles"]]
-    graphs_te = [build_graph(parse_mol(s)) for s in test_["smiles"]]
-    feats = [g[0].shape[1] for g in graphs_tr if g]
-    n_feat = max(feats) if feats else 6
-    model = PolymerGNN(n_feat, hidden=64, latent=latent).to(dev)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
-    idxs = list(range(len(dedup_)))
-    ttypes = dedup_["target_type"].values
-    yvals = dedup_["target"].values.astype(np.float32)
-    vc = pd.Series(ttypes).value_counts(normalize=True)
-    tgt_idx = {t: i for i, t in enumerate(TARGETS)}
-    n_classes = len(TARGETS)
-    oof = np.zeros(len(dedup_)); te_pred = np.zeros(len(test_))
-    # simple train/val split for early stop (grouped 90/10)
-    rng = np.random.RandomState(42)
-    order = rng.permutation(len(idxs))
-    n_tr = int(0.9 * len(idxs))
-    tr_set, va_set = order[:n_tr], order[n_tr:]
-    best = 1e9
-    for ep in range(epochs):
-        model.train(); tot = 0; nb = 0
-        rng.shuffle(tr_set)
-        for i in tr_set:
-            if graphs_tr[i] is None: continue
-            x, adj = graphs_tr[i]; x, adj = x.to(dev), adj.to(dev)
-            pred, _ = model(x, adj)
-            w = 1.0 / vc[ttypes[i]]
-            loss = (w * (pred.squeeze() - yvals[i]) ** 2)
-            opt.zero_grad(); loss.backward(); opt.step()
-            tot += loss.item(); nb += 1
-        sched.step()
-        # val
-        model.eval()
-        with torch.no_grad():
-            vp = []
-            for i in va_set:
-                if graphs_tr[i] is None: vp.append(np.nan); continue
-                x, adj = graphs_tr[i]; x, adj = x.to(dev), adj.to(dev)
-                vp.append(model(x, adj)[0].item())
-            va_rmse = np.sqrt(np.nanmean((np.array(vp) - yvals[va_set]) ** 2))
-        if va_rmse < best: best = va_rmse
-        if (ep+1) % 10 == 0: print(f"    gnn ep {ep+1}/{epochs} trainloss {tot/max(nb,1):.4f} valRMSE {va_rmse:.4f}")
-    model.eval()
-    with torch.no_grad():
-        for i in range(len(dedup_)):
-            if graphs_tr[i] is None: continue
-            x, adj = graphs_tr[i]; x, adj = x.to(dev), adj.to(dev)
-            oof[i] = model(x, adj)[0].item()
-        for i in range(len(test_)):
-            if graphs_te[i] is None: continue
-            x, adj = graphs_te[i]; x, adj = x.to(dev), adj.to(dev)
-            te_pred[i] = model(x, adj)[0].item()
-    return model, oof, te_pred
-
-print("Training GNN branch (GPU)...")
-t0 = time.time()
-gnn_model, gnn_oof, gnn_te = train_gnn(dedup, test, epochs=25)
-print(f"GNN done in {time.time()-t0:.0f}s")
-for tt in TARGETS:
-    m = (dedup["target_type"] == tt).values
-    r = record("gnn", tt, gnn_oof[m], gnn_te)
-    print(f"  gnn {tt}: RMSE={r:.4f}")
-torch.save(gnn_model.state_dict(), os.path.join(WORK, "gnn.pt"))""")
+The pure-PyTorch GIN branch (v4) degenerated on Kaggle's non-GPU runtime (RMSE 158–324). It is
+removed from `BASE_MODELS` and the runtime path. The v4 implementation is preserved in this
+generator's git history for future experiments.""")
+P("""# GNN branch archived in v5 (see spec section 4.8); code kept in build_pipeline_nb.py git history.
+print("GNN branch archived in v5 (see spec 4.8).")""")
 
 M("""## Layer 8 — PI1M pseudo-labelling (confidence-filtered)
 
