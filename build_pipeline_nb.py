@@ -1118,15 +1118,17 @@ M("""## Submission — `submission.csv`
 
 Final test predictions = **stacked ensemble**, with per-target physics bounds:
 - EPS >= 1, Egc/Egb >= 0, Nc in [1, 3], Tg unconstrained (can be negative).""")
-P("""# build final test preds: stack when available, else best base model
+P("""# build final test preds: level-2 when available, else level-1.5, else best base model
 final = np.zeros(len(test))
 for tt in TARGETS:
     m_te = (test["target_type"] == tt).values
-    if tt in STACKED_TE:
-        final[m_te] = STACKED_TE[tt][m_te]
+    if tt in FINAL_TE:
+        final[m_te] = FINAL_TE[tt][m_te]
+    elif tt in L15_TE:
+        final[m_te] = L15_TE[tt][m_te]
     else:
-        best = min(BASE_MODELS, key=lambda b: LEADERBOARD[tt].get(b, 1e9))
-        k = (best + "_" + tt, tt) if best not in ("mtnn","gnn") else (best, tt)
+        best = min(base_models_for(tt), key=lambda b: LEADERBOARD[tt].get(b, 1e9))
+        k = store_key(best, tt)
         final[m_te] = test_store[k][m_te]
 
 # physics bounds (Tg and Eea stay unconstrained - Tg is legitimately negative)

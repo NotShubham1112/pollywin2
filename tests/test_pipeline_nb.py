@@ -81,6 +81,10 @@ def test_fig08_in_notebook():
     assert "vault/figures" not in code
     assert "FINAL_OOF.get" in code
 
+def test_submission_uses_final():
+    code, _ = _build()
+    assert "final[m_te] = FINAL_TE[tt][m_te]" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
