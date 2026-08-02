@@ -24,6 +24,12 @@ def test_cell1_gpu_bootstrap():
     assert "GLOBAL_FOLDS = 5 if SMOKE else 10" in code
     assert "pipeline_out_smoke" in code
 
+def test_cell3_folds_persistence():
+    code, _ = _build()
+    assert "FOLDS_CSV" in code
+    assert "loaded folds.csv" in code
+    assert "dedup[\"fold\"] = folds" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

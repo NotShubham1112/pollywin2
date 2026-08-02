@@ -182,12 +182,22 @@ print("rows before dedupe:", len(train), "-> after:", len(dedup))
 print("unique polymers (train):", dedup["canon"].nunique())
 print("test polymers overlapping train (canonical):", test["canon"].isin(set(dedup["canon"])).sum(), "/", len(test))
 
-# ---- GroupKFold on canonical polymer ----
+# ---- GroupKFold on canonical polymer (persisted; never regenerate) ----
 from sklearn.model_selection import GroupKFold
-gkf = GroupKFold(n_splits=10)
-folds = np.zeros(len(dedup), dtype=int)
-for i, (_, va) in enumerate(gkf.split(dedup, groups=dedup["canon"])):
-    folds[va] = i
+FOLDS_CSV = os.path.join(WORK, "folds.csv")
+if os.path.exists(FOLDS_CSV):
+    folds = pd.read_csv(FOLDS_CSV)["fold"].to_numpy()
+    GLOBAL_FOLDS = int(folds.max()) + 1
+    print("loaded folds.csv with", len(folds), "rows -> GLOBAL_FOLDS =", GLOBAL_FOLDS)
+else:
+    gkf = GroupKFold(n_splits=GLOBAL_FOLDS)
+    folds = np.zeros(len(dedup), dtype=int)
+    for i, (_, va) in enumerate(gkf.split(dedup, groups=dedup["canon"])):
+        folds[va] = i
+    pd.DataFrame({"canon": dedup["canon"].values,
+                  "target_type": dedup["target_type"].values,
+                  "fold": folds}).to_csv(FOLDS_CSV, index=False)
+    print("wrote folds.csv", FOLDS_CSV)
 dedup["fold"] = folds
 print(dedup.groupby(["target_type","fold"]).size().unstack(fill_value=0).to_string())""")
 
