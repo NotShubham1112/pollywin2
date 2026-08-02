@@ -739,10 +739,11 @@ def tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup_, folds, epochs, bs=128, lr=1e-3, wd
         with torch.no_grad():
             oof[va_l] = model(torch.tensor(Xtr_s[va_idx], dtype=torch.float32, device=dev)).cpu().numpy().ravel()
             te_pred += model(Xte_t).cpu().numpy().ravel() / GLOBAL_FOLDS
+        saved = model
         del model; gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-    return model, oof, te_pred
+    return saved, oof, te_pred
 
 print("Training Tg NN (isolated)...")
 t0 = time.time()

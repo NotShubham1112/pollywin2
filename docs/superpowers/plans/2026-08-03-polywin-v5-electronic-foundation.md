@@ -741,8 +741,10 @@ git commit -m "v5: dedicated single-target TgNN (tg isolation)"
 
 ### Task 7: Remove GNN from runtime path
 
+> **Controller note (Task 6 review, applied):** The Layer 6 heading was renumbered in Task 6 — the TgNN cell is now `## Layer 6 — Tg isolation (dedicated single-target TgNN)` and the GNN cell is now `## Layer 7 — GNN branch (pure-PyTorch GIN message passing)`. This task's replacement anchor is therefore `M("""## Layer 7 — GNN branch...`)` and the line range is refreshed below. This deviation was user-approved.
+
 **Files:**
-- Modify: `build_pipeline_nb.py:524-641` (the entire Layer 6 GNN markdown + code cells)
+- Modify: `build_pipeline_nb.py` (the entire Layer 7 GNN markdown + code cells)
 
 **Interfaces:**
 - Consumes: nothing new; removes `PolymerGNN`, `GINConv`, `train_gnn`, `gnn_model`, and the `gnn.pt` save.
@@ -767,10 +769,10 @@ Expected: `FAIL test_gnn_removed -> 'GNN branch archived' not in code`
 
 - [ ] **Step 3: Implement**
 
-Replace in `build_pipeline_nb.py` the entire Layer 6 block — the `M("""## Layer 6 — GNN branch...`)` markdown cell and the full `P("""class GINConv...`)` code cell ending at `torch.save(gnn_model.state_dict(), os.path.join(WORK, "gnn.pt"))""")` — with:
+Replace in `build_pipeline_nb.py` the entire Layer 7 block — the `M("""## Layer 7 — GNN branch...`)` markdown cell and the full `P("""class GINConv...`)` code cell ending at `torch.save(gnn_model.state_dict(), os.path.join(WORK, "gnn.pt"))""")` — with:
 
 ```python
-M("""## Layer 6 — GNN (archived, not in runtime path)
+M("""## Layer 7 — GNN (archived, not in runtime path)
 
 The pure-PyTorch GIN branch (v4) degenerated on Kaggle's non-GPU runtime (RMSE 158–324). It is
 removed from `BASE_MODELS` and the runtime path. The v4 implementation is preserved in this
