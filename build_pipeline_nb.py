@@ -187,6 +187,7 @@ from sklearn.model_selection import GroupKFold
 FOLDS_CSV = os.path.join(WORK, "folds.csv")
 if os.path.exists(FOLDS_CSV):
     folds = pd.read_csv(FOLDS_CSV)["fold"].to_numpy()
+    assert len(folds) == len(dedup), f"folds.csv length mismatch: {len(folds)} != {len(dedup)}"
     GLOBAL_FOLDS = int(folds.max()) + 1
     print("loaded folds.csv with", len(folds), "rows -> GLOBAL_FOLDS =", GLOBAL_FOLDS)
 else:
