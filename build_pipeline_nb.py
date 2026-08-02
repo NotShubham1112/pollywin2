@@ -1031,12 +1031,14 @@ savefig(fig, "03_chemistry_drivers.png")
 rows = []
 for tt in TARGETS:
     m = (dedup["target_type"] == tt).values
-    for b in BASE_MODELS:
+    for b in base_models_for(tt):
         k = store_key(b, tt)
         if k in oof_store:
             rows.append({"target": tt, "model": b, "rmse": rmse_metric(Y[m], oof_store[k])})
-    if tt in STACKED_OOF:
-        rows.append({"target": tt, "model": "stack", "rmse": rmse_metric(Y[m], STACKED_OOF[tt])})
+    if tt in L15_OOF:
+        rows.append({"target": tt, "model": "l15", "rmse": rmse_metric(Y[m], L15_OOF[tt])})
+    if tt in FINAL_OOF:
+        rows.append({"target": tt, "model": "final", "rmse": rmse_metric(Y[m], FINAL_OOF[tt])})
 mc = pd.DataFrame(rows)
 fig, ax = plt.subplots(figsize=(10, 5))
 sns.barplot(data=mc, x="target", y="rmse", hue="model", ax=ax)
@@ -1048,7 +1050,7 @@ fig, axes = plt.subplots(2, 4, figsize=(14, 6))
 for ax, tt in zip(axes.ravel()[:7], TARGETS):
     m = (dedup["target_type"] == tt).values
     yv = Y[m]
-    yp = STACKED_OOF.get(tt, np.zeros(m.sum()))
+    yp = FINAL_OOF.get(tt, np.zeros(m.sum()))
     ax.scatter(yv, yp, s=6, alpha=0.5, color=pal[TARGETS.index(tt)])
     lo, hi = min(yv.min(), yp.min()), max(yv.max(), yp.max())
     ax.plot([lo, hi], [lo, hi], "k--", lw=1)
@@ -1060,7 +1062,7 @@ axes.ravel()[7].axis("off"); savefig(fig, "05_pred_vs_actual.png")
 fig, axes = plt.subplots(2, 4, figsize=(14, 6))
 for ax, tt in zip(axes.ravel()[:7], TARGETS):
     m = (dedup["target_type"] == tt).values
-    yv = Y[m]; yp = STACKED_OOF.get(tt, np.zeros(m.sum()))
+    yv = Y[m]; yp = FINAL_OOF.get(tt, np.zeros(m.sum()))
     ax.hist(yv - yp, bins=40, color=pal[TARGETS.index(tt)], edgecolor="white")
     ax.set_title(f"{tt} residuals")
 axes.ravel()[7].axis("off"); savefig(fig, "06_residuals.png")
@@ -1075,18 +1077,33 @@ if ("lgb_tg" in oof_store):
     ax.set_title("Top-20 feature importances (LightGBM, Tg)")
     savefig(fig, "07_feature_importance.png")
 
-# ---- Fig 8: cross-target correlation (physics) ----
-ct = pd.read_csv(os.path.join("vault","figures","cross_target_corr.csv"), index_col=0) if os.path.exists(os.path.join("vault","figures","cross_target_corr.csv")) else None
-if ct is not None:
-    fig, ax = plt.subplots(figsize=(7, 6))
-    sns.heatmap(ct.astype(float), cmap="RdBu_r", vmin=-1, vmax=1, annot=True, fmt=".2f", ax=ax)
-    ax.set_title("Cross-target correlation (shared molecules)")
-    savefig(fig, "08_cross_target_corr.png")
+# ---- Fig 8: cross-target correlation (computed in-notebook from Y) ----
+def _canon_target_map(tt):
+    mm = (dedup["target_type"] == tt).values
+    return dict(zip(dedup.loc[mm, "canon"].values, dedup.loc[mm, "target"].values))
+
+ct_maps = {t: _canon_target_map(t) for t in TARGETS}
+ct = np.full((len(TARGETS), len(TARGETS)), np.nan)
+for i, a in enumerate(TARGETS):
+    for j, b in enumerate(TARGETS):
+        if i == j:
+            ct[i, j] = 1.0; continue
+        shared = sorted(set(ct_maps[a]) & set(ct_maps[b]))
+        if len(shared) < 20:
+            continue
+        aa = np.array([ct_maps[a][c] for c in shared]); bb = np.array([ct_maps[b][c] for c in shared])
+        ct[i, j] = spearmanr(aa, bb).statistic
+_ctdf = pd.DataFrame(ct, index=TARGETS, columns=TARGETS)
+_ctdf.round(4).to_csv(os.path.join(WORK, "cross_target_corr.csv"))
+fig, ax = plt.subplots(figsize=(8, 7))
+sns.heatmap(_ctdf.astype(float), cmap="RdBu_r", vmin=-1, vmax=1, annot=True, fmt=".2f", ax=ax)
+ax.set_title("Cross-target correlation (shared molecules)")
+savefig(fig, "08_cross_target_corr.png")
 
 # ---- Fig 9: stack improvement ----
-if mc is not None and (mc["model"] == "stack").any():
-    base_mean = mc[mc.model != "stack"].groupby("target")["rmse"].min()
-    st = mc[mc.model == "stack"].set_index("target")["rmse"]
+if mc is not None and (mc["model"] == "final").any():
+    base_mean = mc[~mc.model.isin(["l15", "final"])].groupby("target")["rmse"].min()
+    st = mc[mc.model == "final"].set_index("target")["rmse"]
     fig, ax = plt.subplots(figsize=(8, 4))
     x = np.arange(len(TARGETS)); w = 0.35
     ax.bar(x - w/2, [base_mean.get(t, np.nan) for t in TARGETS], w, label="best base", color="#999999")

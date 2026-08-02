@@ -75,6 +75,12 @@ def test_gbm_artifact_save():
     assert "model_oof" in code
     assert "save_oof_artifact(name, model_oof[name], model_te[name])" in code
 
+def test_fig08_in_notebook():
+    code, _ = _build()
+    assert "cross_target_corr.csv" in code
+    assert "vault/figures" not in code
+    assert "FINAL_OOF.get" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
