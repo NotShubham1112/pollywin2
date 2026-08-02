@@ -21,8 +21,8 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 2. **Feature Factory** — RDKit descriptors, Morgan/MACCS/AtomPair/Topological fingerprints, polymer-physics features, fragment vocabulary
 3. **Retrieval Memory** — fold-safe kNN features from train neighbours
 4. **Target-aware experts** — LightGBM / CatBoost / XGBoost / HistGB per expert group
-5. **Multi-task NN** — shared trunk + per-target heads (PyTorch, GPU)
-6. **GNN branch** — pure-PyTorch GIN message passing on the polymer graph
+5. **Electronic Foundation Network** — shared encoder + 6 real electronic heads + 10 aux physics heads (PyTorch, GPU)
+6. **Tg isolation** — dedicated single-target Tg NN (no shared trunk, no cross features)
 7. **Stacking** — Ridge / ElasticNet / CatBoost meta-model on OOF predictions
 8. **PI1M pseudo-labelling** — confidence-filtered semi-supervised retraining
 9. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
@@ -567,87 +567,128 @@ for tt in TARGETS:
     print(f"  -> best for {tt}: {best} RMSE={leader[best]:.4f}")
 pd.DataFrame(LEADERBOARD).round(4).to_csv(os.path.join(WORK, "leaderboard_gbm.csv"))""")
 
-M("""## Layer 5 — Multi-task NN (shared trunk + per-target heads)
+M("""## Layer 5 — Electronic Foundation Network (EFN)
 
-A PyTorch MLP with a shared encoder (256→128→64) and separate output heads.
-Loss = inverse-frequency-weighted RMSE so the small targets are not ignored.
-Trained on **GPU** when available.""")
+Shared encoder `1153 -> 512 -> 256 -> 128` (BN + SiLU + Dropout 0.3) produces a polymer-state
+vector. 6 real electronic heads (egc, egb, eps, nc, ei, eea) + 10 aux physics heads supervise the
+encoder on **all** rows. Per-target inverse-sigma MSE weighting + per-head presence masking
+(missing labels are never imputed). **Tg is excluded entirely from this trunk.** Honest OOF: one
+model per global fold; test predictions averaged across fold models.""")
 P("""import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
-class MultiTaskNN(nn.Module):
-    def __init__(self, n_in, hidden=256, latent=64):
+class EFN(nn.Module):
+    def __init__(self, n_in, hidden=512, latent=128, n_aux=len(AUX_TASKS)):
         super().__init__()
-        self.shared = nn.Sequential(
+        self.enc = nn.Sequential(
             nn.Linear(n_in, hidden), nn.BatchNorm1d(hidden), nn.SiLU(), nn.Dropout(0.3),
             nn.Linear(hidden, hidden//2), nn.BatchNorm1d(hidden//2), nn.SiLU(), nn.Dropout(0.3),
             nn.Linear(hidden//2, latent), nn.SiLU(),
         )
-        self.heads = nn.ModuleDict({t: nn.Linear(latent, 1) for t in TARGETS})
-    def forward(self, x, tt_batch):
-        z = self.shared(x)
-        out = torch.zeros((x.size(0), 1), device=x.device)
-        for t in TARGETS:
-            mask = np.array([tb == t for tb in tt_batch], dtype=bool)
-            if mask.any():
-                out[mask] = self.heads[t](z[mask])
-        return out
+        self.real_heads = nn.ModuleDict({t: nn.Linear(latent, 1) for t in ELECTRONIC_TARGETS})
+        self.aux_heads = nn.ModuleList([nn.Linear(latent, 1) for _ in range(n_aux)])
+    def forward(self, x):
+        z = self.enc(x)
+        real = {t: h(z) for t, h in self.real_heads.items()}
+        aux = [h(z) for h in self.aux_heads]
+        return real, aux
 
-def train_multitask(X_all_, Y_all_, types_, Xte_, te_types_, epochs=40, bs=128, lr=1e-3, wd=1e-4):
-    dev = get_torch_device()
-    n_in = X_all_.shape[1]
-    model = MultiTaskNN(n_in).to(dev)
+def _fit_efn_fold(tr_idx, X_s, real_y, aux_all, aux_w, epochs, bs, lr, wd, lam_aux, dev):
+    torch.manual_seed(42)
+    model = EFN(X_s.shape[1], n_aux=len(AUX_TASKS)).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
-    # inverse frequency weights per target
-    vc = pd.Series(types_).value_counts(normalize=True)
-    w = torch.tensor([1.0 / vc[t] for t in types_], dtype=torch.float32, device=dev)
-    w = w / w.mean()
-
-    X = torch.tensor(X_all_, dtype=torch.float32); Y = torch.tensor(Y_all_, dtype=torch.float32).view(-1,1)
-    ttv = torch.tensor([list(TARGETS).index(t) for t in types_])
-    tt_map = {i: t for i, t in enumerate(TARGETS)}
-    ds = TensorDataset(X, Y, ttv, w)
-    dl = DataLoader(ds, batch_size=bs, shuffle=True, drop_last=True)
-    Xte_t = torch.tensor(Xte_, dtype=torch.float32).to(dev)
-    te_tt = torch.tensor([list(TARGETS).index(t) for t in te_types_])
-
+    Xt = torch.tensor(X_s[tr_idx], dtype=torch.float32, device=dev)
+    real_t = torch.tensor(real_y[tr_idx], dtype=torch.float32, device=dev)
+    mu = np.nanmean(aux_all[tr_idx], axis=0)
+    sd = np.nanstd(aux_all[tr_idx], axis=0); sd[sd < 1e-8] = 1.0
+    aux_t = torch.tensor(np.clip((aux_all[tr_idx] - mu) / sd, -5.0, 5.0), dtype=torch.float32, device=dev)
+    sig = {}
+    for j, t in enumerate(ELECTRONIC_TARGETS):
+        v = real_t[:, j].cpu().numpy(); v = v[~np.isnan(v)]
+        sig[t] = float(np.std(v)) if len(v) > 1 and np.std(v) > 1e-6 else 1.0
+    n = len(tr_idx)
     for ep in range(epochs):
-        model.train(); tot = 0; nb = 0
-        for xb, yb, ttvb, wb in dl:
-            xb, yb, wb = xb.to(dev), yb.to(dev), wb.to(dev)
-            ttvb_map = [tt_map[int(i)] for i in ttvb]
+        model.train()
+        perm = torch.randperm(n, device=dev)
+        tot = 0.0; nb = 0
+        for i in range(0, n, bs):
+            bi = perm[i:i+bs]
             opt.zero_grad()
-            pred = model(xb, ttvb_map)
-            loss = (wb * (pred - yb) ** 2).mean()
+            rp, ap = model(Xt[bi])
+            rb, ab = real_t[bi], aux_t[bi]
+            loss = torch.tensor(0.0, device=dev); n_real = 0
+            for j, t in enumerate(ELECTRONIC_TARGETS):
+                mm = ~torch.isnan(rb[:, j])
+                if mm.any():
+                    loss = loss + (1.0/sig[t]) * F.mse_loss(rp[t].squeeze()[mm], rb[mm, j]); n_real += 1
+            if n_real > 0:
+                loss = loss / n_real
+            aux_loss = torch.tensor(0.0, device=dev)
+            for j, h in enumerate(model.aux_heads):
+                aux_loss = aux_loss + aux_w[j] * F.mse_loss(ap[j].squeeze(), ab[:, j])
+            aux_loss = aux_loss / max(len(model.aux_heads), 1)
+            loss = loss + lam_aux * aux_loss
             loss.backward(); opt.step()
             tot += loss.item(); nb += 1
         sched.step()
         if (ep+1) % 10 == 0:
-            print(f"    mt-ep {ep+1}/{epochs} loss {tot/nb:.4f}")
-    model.eval()
-    with torch.no_grad():
-        oof = model(X.to(dev), [tt_map[int(i)] for i in ttv]).cpu().numpy().ravel()
-        te_pred = model(Xte_t, [tt_map[int(i)] for i in te_tt]).cpu().numpy().ravel()
-    return model, oof, te_pred
+            print(f"    efn ep {ep+1}/{epochs} loss {tot/max(nb,1):.4f}")
+    return model
 
-# standardize inputs for NN
+def efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup_, folds, epochs, bs=256,
+                    lr=1e-3, wd=1e-4, lam_aux=0.3):
+    dev = get_torch_device()
+    aux_w = 1.0 / np.maximum(np.nanstd(aux_tr, axis=0), 1e-6)
+    tgt_sub = {t: np.where((dedup_["target_type"] == t).values)[0] for t in ELECTRONIC_TARGETS}
+    pos_in_sub = {}
+    for t, idx in tgt_sub.items():
+        p = np.full(len(dedup_), -1, dtype=int); p[idx] = np.arange(len(idx)); pos_in_sub[t] = p
+    oof = {t: np.full(len(idx), np.nan) for t, idx in tgt_sub.items()}
+    te = {t: np.zeros(len(Xte_s)) for t in ELECTRONIC_TARGETS}
+    Xte_t = torch.tensor(Xte_s, dtype=torch.float32, device=dev)
+    for f in range(GLOBAL_FOLDS):
+        tr_idx = np.where(folds != f)[0]
+        va_idx = np.where(folds == f)[0]
+        model = _fit_efn_fold(tr_idx, Xtr_s, real_y, aux_tr, aux_w, epochs, bs, lr, wd, lam_aux, dev)
+        model.eval()
+        with torch.no_grad():
+            r_te, _ = model(Xte_t)
+            for j, t in enumerate(ELECTRONIC_TARGETS):
+                te[t] += r_te[t].cpu().numpy().ravel() / GLOBAL_FOLDS
+            r_va, _ = model(torch.tensor(Xtr_s[va_idx], dtype=torch.float32, device=dev))
+            for j, t in enumerate(ELECTRONIC_TARGETS):
+                m_ok = ~np.isnan(real_y[va_idx, j])
+                if m_ok.any():
+                    oof[t][pos_in_sub[t][va_idx[m_ok]]] = r_va[t].cpu().numpy().ravel()[m_ok]
+        del model; gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    return oof, te
+
+# ---- standardize inputs for NN (global, shared by EFN + tgnn) ----
 from sklearn.preprocessing import StandardScaler
 sc = StandardScaler()
 Xs = sc.fit_transform(pd.concat([Xtr, Xte], axis=0).values)
 Xtr_s, Xte_s = Xs[:len(dedup)], Xs[len(dedup):]
 
-print("Training multi-task NN...")
+# ---- real target matrix (NaN where a target is absent for a row) ----
+real_y = np.full((len(dedup), len(ELECTRONIC_TARGETS)), np.nan)
+for j, t in enumerate(ELECTRONIC_TARGETS):
+    mm = (dedup["target_type"] == t).values
+    real_y[mm, j] = Y[mm]
+
+print("Training Electronic Foundation Network...")
 t0 = time.time()
-mt_model, mt_oof, mt_te = train_multitask(Xtr_s, Y, dedup["target_type"].tolist(),
-                                          Xte_s, test["target_type"].tolist(), epochs=35)
-print(f"multi-task NN done in {time.time()-t0:.0f}s")
-for tt in TARGETS:
+efn_oof, efn_te = efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup, folds,
+                                  epochs=EFN_EPOCHS)
+print(f"EFN done in {time.time()-t0:.0f}s")
+for tt in ELECTRONIC_TARGETS:
     m = (dedup["target_type"] == tt).values
-    r = record("mtnn", tt, mt_oof[m], mt_te)
-    print(f"  mtnn {tt}: RMSE={r:.4f}")
-torch.save(mt_model.state_dict(), os.path.join(WORK, "mtnn.pt"))""")
+    r = record("efn_" + tt, tt, efn_oof[tt], efn_te[tt])
+    print(f"  efn {tt}: RMSE={r:.4f}")
+save_oof_artifact("efn", efn_oof, efn_te)""")
 
 M("""## Layer 6 — GNN branch (pure-PyTorch GIN message passing)
 

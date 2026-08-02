@@ -41,6 +41,14 @@ def test_harness_electronic_targets_and_artifact_helper():
     assert "ELECTRONIC_TARGETS = [\"egc\",\"egb\",\"eps\",\"nc\",\"ei\",\"eea\"]" in code
     assert "def save_oof_artifact" in code
 
+def test_efn_replaces_mtnn():
+    code, _ = _build()
+    assert "class EFN" in code
+    assert "def efn_fit_predict" in code
+    assert "save_oof_artifact(\"efn\"" in code
+    assert "train_multitask" not in code
+    assert "MultiTaskNN" not in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
