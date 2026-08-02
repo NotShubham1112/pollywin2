@@ -70,6 +70,11 @@ def test_stacking_levels():
     assert "l15_ridge.parquet" in code
     assert "final_meta.parquet" in code
 
+def test_gbm_artifact_save():
+    code, _ = _build()
+    assert "model_oof" in code
+    assert "save_oof_artifact(name, model_oof[name], model_te[name])" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

@@ -552,6 +552,8 @@ def make_hgb():
                                          l2_regularization=1.0)
 
 LEADERBOARD = {}
+model_oof = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
+model_te = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
 print("Training GBM experts...")
 for tt in TARGETS:
     m, idx, splits = get_splits(tt)
@@ -561,10 +563,13 @@ for tt in TARGETS:
         oof, tep = gbm_fit_predict(tt, mk, Xtr, Xte)
         r = record(name + "_" + tt, tt, oof, tep)
         leader[name] = r
+        model_oof[name][tt] = oof; model_te[name][tt] = tep
         print(f"  {tt} {name}: RMSE={r:.4f} ({time.time()-t0:.0f}s)")
     LEADERBOARD[tt] = leader
     best = min(leader, key=leader.get)
     print(f"  -> best for {tt}: {best} RMSE={leader[best]:.4f}")
+for name in ("lgb", "cat", "xgb", "hgb"):
+    save_oof_artifact(name, model_oof[name], model_te[name])
 pd.DataFrame(LEADERBOARD).round(4).to_csv(os.path.join(WORK, "leaderboard_gbm.csv"))""")
 
 M("""## Layer 5 — Electronic Foundation Network (EFN)
