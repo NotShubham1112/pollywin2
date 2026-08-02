@@ -328,6 +328,61 @@ Xte.to_pickle(os.path.join(WORK, "Xte.pkl"))
 dedup.to_pickle(os.path.join(WORK, "dedup.pkl"))
 test.to_pickle(os.path.join(WORK, "test.pkl"))""")
 
+M("""## Auxiliary physics tasks (10 scores)
+
+Chemistry-derived scores computed from RDKit Mol objects for **all** training rows (no missing
+labels). Used at train time only to give the shared EFN encoder dense supervision. They are NOT
+descriptor columns, so the model cannot copy them trivially.""")
+P("""AUX_TASKS = ["aromaticity_score","conjugation_score","sulfur_score","electronegativity_score",
+              "polarity_score","ring_density_score","flexibility_score","halogen_density",
+              "hbond_capacity","heteroatom_fraction"]
+
+PAULING = {"C":2.55,"N":3.04,"O":3.44,"F":3.98,"S":2.58,"Si":1.90,"Cl":3.16,"P":2.19,"Br":2.96,"I":2.66}
+
+def aux_physics_scores(smiles_list):
+    rows = []
+    for smi in smiles_list:
+        m = parse_mol(smi)
+        if m is None:
+            rows.append(np.zeros(len(AUX_TASKS), dtype=np.float32)); continue
+        atoms = list(m.GetAtoms())
+        heavy = max(m.GetNumHeavyAtoms(), 1)
+        arom = sum(1 for a in atoms if a.GetIsAromatic())
+        conj = sum(1 for a in atoms if Chem.AtomHasConjugatedBond(a))
+        nS = sum(1 for a in atoms if a.GetSymbol()=="S")
+        en = np.mean([PAULING.get(a.GetSymbol(), 2.5) for a in atoms])
+        tpsa = rdMolDescriptors.CalcTPSA(m)
+        ri = m.GetRingInfo()
+        ring_atoms = len({a for a in ri.AtomRings() for a in ring})
+        rot = rdMolDescriptors.CalcNumRotatableBonds(m)
+        nF = sum(1 for a in atoms if a.GetSymbol()=="F")
+        nCl = sum(1 for a in atoms if a.GetSymbol()=="Cl")
+        nBr = sum(1 for a in atoms if a.GetSymbol()=="Br")
+        nI = sum(1 for a in atoms if a.GetSymbol()=="I")
+        hbd = rdMolDescriptors.CalcNumHBD(m); hba = rdMolDescriptors.CalcNumHBA(m)
+        nC = sum(1 for a in atoms if a.GetSymbol()=="C")
+        nHeavy = m.GetNumHeavyAtoms()
+        rows.append(np.array([
+            arom/heavy, conj/heavy, nS/heavy, en, tpsa/heavy,
+            ring_atoms/heavy, rot/heavy, (nF+nCl+nBr+nI)/heavy,
+            (hbd+hba)/heavy, (nHeavy-nC)/heavy,
+        ], dtype=np.float32))
+    return np.stack(rows)
+
+print("Computing auxiliary physics scores...")
+t0 = time.time()
+aux_tr = aux_physics_scores(dedup["smiles"].tolist())
+aux_te = aux_physics_scores(test["smiles"].tolist())
+aux_all = np.vstack([aux_tr, aux_te])
+keep_aux = [j for j in range(aux_all.shape[1]) if np.nanstd(aux_all[:, j]) > 1e-8]
+aux_all = aux_all[:, keep_aux]
+AUX_TASKS = [AUX_TASKS[j] for j in keep_aux]
+aux_tr = aux_all[:len(dedup)]; aux_te = aux_all[len(dedup):]
+print(f"aux scores {aux_tr.shape} {aux_te.shape}; kept {len(AUX_TASKS)} tasks")
+for j, name in enumerate(AUX_TASKS):
+    v = aux_tr[:, j]
+    print(f"  {name:24s} mean={np.nanmean(v):.4f} std={np.nanstd(v):.4f}")""")
+
 M("""## Layer 3 — Retrieval Memory (fold-safe kNN features)
 
 Because 17% of test SMILES have near-exact train twins, we add **kNN similarity features**:

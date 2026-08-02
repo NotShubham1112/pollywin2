@@ -30,6 +30,12 @@ def test_cell3_folds_persistence():
     assert "loaded folds.csv" in code
     assert "dedup[\"fold\"] = folds" in code
 
+def test_aux_physics_cell():
+    code, _ = _build()
+    assert "AUX_TASKS" in code
+    assert "def aux_physics_scores" in code
+    assert "Chem.AtomHasConjugatedBond" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
