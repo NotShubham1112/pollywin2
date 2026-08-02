@@ -54,6 +54,41 @@ warnings.filterwarnings("ignore")
 np.random.seed(42); random.seed(42)
 import torch
 
+def ensure_torch_cuda():
+    \"\"\"Best-effort repair of a broken torch/CUDA pairing; always falls back to CPU.\"\"\"
+    import torch as _t0
+    if not _t0.cuda.is_available():
+        return _t0
+    try:
+        _x = _t0.zeros(1, device="cuda"); _x = _x + 1
+        _t0.cuda.synchronize(); del _x
+        return _t0
+    except Exception as _e:
+        print("CUDA probe failed:", str(_e)[:120], "-> attempting torch cu121 repair")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
+                               "--index-url", "https://download.pytorch.org/whl/cu121",
+                               "torch==2.2.2"])
+    except Exception as _e:
+        print("torch repair install failed:", str(_e)[:120])
+    for _m in list(sys.modules):
+        if _m == "torch" or _m.startswith("torch."):
+            del sys.modules[_m]
+    import torch
+    if torch.cuda.is_available():
+        try:
+            _x = torch.zeros(1, device="cuda"); _x = _x + 1
+            torch.cuda.synchronize(); del _x
+            print("torch repaired -> CUDA OK:", torch.__version__)
+            return torch
+        except Exception as _e:
+            print("CUDA still failing after repair -> CPU:", str(_e)[:120])
+    else:
+        print("no CUDA after repair -> CPU")
+    return torch
+
+torch = ensure_torch_cuda()
+
 def get_torch_device():
     if torch.cuda.is_available():
         try:
@@ -69,10 +104,17 @@ if ON_KAGGLE:
     WORK = "/kaggle/working"
 else:
     WORK = os.path.join("vault", "pipeline_out")
+SMOKE = os.environ.get("POLYWIN_SMOKE", "0") == "1"
+if SMOKE and not ON_KAGGLE:
+    WORK = os.path.join("vault", "pipeline_out_smoke")
 os.makedirs(WORK, exist_ok=True)
 FIG = os.path.join(WORK, "figures"); os.makedirs(FIG, exist_ok=True)
+GLOBAL_FOLDS = 5 if SMOKE else 10
+EFN_EPOCHS = 15 if SMOKE else 40
+TGNN_EPOCHS = 15 if SMOKE else 40
 print("ON_KAGGLE =", ON_KAGGLE)
 print("WORK =", WORK)
+print("SMOKE =", SMOKE, "| GLOBAL_FOLDS =", GLOBAL_FOLDS)
 print("torch =", torch.__version__, "| cuda =", torch.cuda.is_available())
 if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(0))""")
