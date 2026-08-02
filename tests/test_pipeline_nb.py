@@ -36,6 +36,11 @@ def test_aux_physics_cell():
     assert "def aux_physics_scores" in code
     assert "Chem.AtomHasConjugatedBond" in code
 
+def test_harness_electronic_targets_and_artifact_helper():
+    code, _ = _build()
+    assert "ELECTRONIC_TARGETS = [\"egc\",\"egb\",\"eps\",\"nc\",\"ei\",\"eea\"]" in code
+    assert "def save_oof_artifact" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

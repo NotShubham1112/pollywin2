@@ -491,6 +491,26 @@ def record(name, tt, oof, te_pred):
     test_store[(name, tt)] = te_pred
     return rmse_metric(Y[dedup["target_type"].values == tt], oof)
 
+ELECTRONIC_TARGETS = ["egc","egb","eps","nc","ei","eea"]
+
+def save_oof_artifact(name, oof_map, te_map):
+    \"\"\"Persist per-target OOF + test predictions for one base model as parquet.\"\"\"
+    parts = []
+    for tt in TARGETS:
+        m_tr = (dedup["target_type"] == tt).values
+        m_te = (test["target_type"] == tt).values
+        if tt in oof_map:
+            parts.append(pd.DataFrame({
+                "target": tt,
+                "dedup_index": np.where(m_tr)[0],
+                "oof": np.asarray(oof_map[tt]),
+                "test_pred": np.asarray(te_map[tt])[m_te],
+            }))
+    if not parts:
+        return
+    pd.concat(parts, ignore_index=True).to_parquet(os.path.join(WORK, f"oof_{name}.parquet"), index=False)
+    print("saved oof_" + name + ".parquet")
+
 # sanity: how many test rows per type
 print(test["target_type"].value_counts().to_string())""")
 
