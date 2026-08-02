@@ -66,7 +66,7 @@ def test_cell1_gpu_bootstrap():
     code, _ = _build()
     assert "def ensure_torch_cuda" in code
     assert "GLOBAL_FOLDS = 5 if SMOKE else 10" in code
-    assert "vault", "pipeline_out_smoke"  # placeholder removed in Task 2 step
+    assert "pipeline_out_smoke" in code
 
 if __name__ == "__main__":
     import traceback
@@ -81,8 +81,6 @@ if __name__ == "__main__":
                 traceback.print_exc()
     sys.exit(1 if failed else 0)
 ```
-
-> Note: the placeholder `assert "vault", "pipeline_out_smoke"` is a non-asserting tuple (always truthy); it will be replaced with a real assertion in Task 2's test edit.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -1358,6 +1356,6 @@ git commit -m "v5: smoke run passes end-to-end with honest OOF artifacts"
 **Spec coverage:**
 - §4.1 GPU bootstrap → Task 1. §4.2 fold consistency/persistence + single `GLOBAL_FOLDS` + smoke folds → Tasks 1–2. §4.3 aux physics tasks → Task 3. §4.4 EFN (encoder widths, 6+10 heads, inverse-σ weighting, per-head masks, honest fold-wise OOF, fixed width, Tg excluded) → Task 5. §4.5 Tg isolation (own NN + own stack, no cross features) → Tasks 6 & 8 (`BASE_MODELS_TG`, `CROSS_MAP["tg"]=[]`). §4.6 reliability features → Task 8. §4.7 cross-target OOF layer (map + missing-indicator + fold-safety) → Task 8. §4.8 GNN removal → Task 7. §4.9 stacking/submission (BASE_MODELS split, store_key, physics bounds) → Tasks 8 & 11. §4.10 figures (Fig-08 in-notebook, Fig-04/09 names) → Task 10. §4.11 artifact persistence (all 9 files) → Tasks 2, 4, 5, 6, 8, 9. §6 validation plan (smoke then Kaggle) → Task 12.
 
-**Placeholder scan:** no TBD/TODO; every step carries concrete code, exact strings, and expected output. The single intentional placeholder in Task 1's test (`assert "vault", "pipeline_out_smoke"`) is a no-op tuple that is replaced by the real `test_cell3_folds_persistence`-adjacent assertions in Task 2 and removed in Task 12's suite run — noted inline.
+**Placeholder scan:** no TBD/TODO; every step carries concrete code, exact strings, and expected output.
 
 **Type/name consistency:** `efn_fit_predict` returns `({t: array}, {t: array})` and is recorded as `("efn_"+tt, tt)`; `store_key("efn", tt)` reproduces that key. Same for `tgnn`. `base_models_for` is used identically in Tasks 8, 10, 11. `FINAL_OOF`/`FINAL_TE`/`L15_OOF`/`L15_TE` names are stable across Tasks 8–11. `save_oof_artifact` signature `(name, oof_map, te_map)` matches calls in Tasks 5, 6, 9.
