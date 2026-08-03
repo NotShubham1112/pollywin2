@@ -35,6 +35,7 @@ def test_aux_physics_cell():
     assert "AUX_TASKS" in code
     assert "def aux_physics_scores" in code
     assert "Chem.AtomHasConjugatedBond" in code
+    assert "{a for ring in ri.AtomRings() for a in ring}" in code
 
 def test_harness_electronic_targets_and_artifact_helper():
     code, _ = _build()
@@ -84,6 +85,21 @@ def test_fig08_in_notebook():
 def test_submission_uses_final():
     code, _ = _build()
     assert "final[m_te] = FINAL_TE[tt][m_te]" in code
+
+def test_artifact_helper_train_test_separate():
+    """save_oof_artifact must not pack train-aligned (dedup_index/oof) and
+    test-aligned (test_pred) arrays into one DataFrame: dedup and test row counts
+    differ per target, which raised 'All arrays must be the same length' on the
+    first smoke run."""
+    nb = nbformat.read(str(NB), as_version=4)
+    src = next(c.source for c in nb.cells
+               if c.cell_type == "code" and "def save_oof_artifact" in c.source)
+    assert '"subset": "train"' in src
+    assert '"subset": "test"' in src
+    oof_at = src.find('"oof": np.asarray(oof_map[tt])')
+    te_at = src.find('"test_pred": np.asarray(te_map[tt])[m_te]')
+    assert oof_at != -1 and te_at != -1
+    assert '"subset"' in src[oof_at:te_at]  # separate DataFrame block starts between them
 
 if __name__ == "__main__":
     import traceback

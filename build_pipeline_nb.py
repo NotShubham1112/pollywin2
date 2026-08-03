@@ -353,7 +353,7 @@ def aux_physics_scores(smiles_list):
         en = np.mean([PAULING.get(a.GetSymbol(), 2.5) for a in atoms])
         tpsa = rdMolDescriptors.CalcTPSA(m)
         ri = m.GetRingInfo()
-        ring_atoms = len({a for a in ri.AtomRings() for a in ring})
+        ring_atoms = len({a for ring in ri.AtomRings() for a in ring})
         rot = rdMolDescriptors.CalcNumRotatableBonds(m)
         nF = sum(1 for a in atoms if a.GetSymbol()=="F")
         nCl = sum(1 for a in atoms if a.GetSymbol()=="Cl")
@@ -494,18 +494,26 @@ def record(name, tt, oof, te_pred):
 ELECTRONIC_TARGETS = ["egc","egb","eps","nc","ei","eea"]
 
 def save_oof_artifact(name, oof_map, te_map):
-    \"\"\"Persist per-target OOF + test predictions for one base model as parquet.\"\"\"
+    \"\"\"Persist per-target OOF + test predictions for one base model as parquet.
+
+    Train (dedup) and test row counts differ per target, so each target is stored as a
+    long-format block with a `subset` column: `train` rows carry `dedup_index` + `oof`,
+    `test` rows carry `test_pred`.\"\"\"
     parts = []
     for tt in TARGETS:
         m_tr = (dedup["target_type"] == tt).values
         m_te = (test["target_type"] == tt).values
         if tt in oof_map:
-            parts.append(pd.DataFrame({
-                "target": tt,
+            tr = pd.DataFrame({
+                "target": tt, "subset": "train",
                 "dedup_index": np.where(m_tr)[0],
                 "oof": np.asarray(oof_map[tt]),
+            })
+            te = pd.DataFrame({
+                "target": tt, "subset": "test",
                 "test_pred": np.asarray(te_map[tt])[m_te],
-            }))
+            })
+            parts.append(pd.concat([tr, te], ignore_index=True))
     if not parts:
         return
     pd.concat(parts, ignore_index=True).to_parquet(os.path.join(WORK, f"oof_{name}.parquet"), index=False)
@@ -948,11 +956,15 @@ for tt in TARGETS:
     m = (dedup["target_type"] == tt).values
     m_te = (test["target_type"] == tt).values
     if tt in L15_OOF:
-        l15_parts.append(pd.DataFrame({"target": tt, "dedup_index": np.where(m)[0],
-                                       "l15_oof": L15_OOF[tt], "l15_test": np.asarray(L15_TE[tt])[m_te]}))
+        tr = pd.DataFrame({"target": tt, "subset": "train", "dedup_index": np.where(m)[0],
+                           "l15_oof": L15_OOF[tt]})
+        te = pd.DataFrame({"target": tt, "subset": "test", "l15_test": np.asarray(L15_TE[tt])[m_te]})
+        l15_parts.append(pd.concat([tr, te], ignore_index=True))
     if tt in FINAL_OOF:
-        fin_parts.append(pd.DataFrame({"target": tt, "dedup_index": np.where(m)[0],
-                                       "final_oof": FINAL_OOF[tt], "final_test": np.asarray(FINAL_TE[tt])[m_te]}))
+        tr = pd.DataFrame({"target": tt, "subset": "train", "dedup_index": np.where(m)[0],
+                           "final_oof": FINAL_OOF[tt]})
+        te = pd.DataFrame({"target": tt, "subset": "test", "final_test": np.asarray(FINAL_TE[tt])[m_te]})
+        fin_parts.append(pd.concat([tr, te], ignore_index=True))
 pd.concat(l15_parts).to_parquet(os.path.join(WORK, "l15_ridge.parquet"), index=False)
 pd.concat(fin_parts).to_parquet(os.path.join(WORK, "final_meta.parquet"), index=False)
 print("saved l15_ridge.parquet, final_meta.parquet")
