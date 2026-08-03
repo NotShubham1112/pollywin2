@@ -108,6 +108,19 @@ def test_artifact_helper_train_test_separate():
     assert oof_at != -1 and te_at != -1
     assert '"subset"' in src[oof_at:te_at]  # separate DataFrame block starts between them
 
+def test_run_nns_gate():
+    code, md = _build()
+    assert "RUN_NNS = False" in code
+    assert "if RUN_NNS:" in code
+    assert 'BASE_MODELS_ELEC = ["lgb","cat","xgb","hgb","efn"] if RUN_NNS else ["lgb","cat","xgb","hgb"]' in code
+    assert 'BASE_MODELS_TG = ["lgb","cat","xgb","hgb","tgnn"] if RUN_NNS else ["lgb","cat","xgb","hgb"]' in code
+    assert "archived" in md
+
+def test_header_v7_architecture():
+    code, md = _build()
+    assert "Retrieval Memory" in md
+    assert "ablation" in md.lower()
+
 if __name__ == "__main__":
     import traceback
     failed = 0

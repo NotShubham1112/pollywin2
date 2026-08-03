@@ -19,13 +19,15 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 ## Architecture (9 layers)
 1. **Canonicalization** — normalize SMILES, dedupe, group key for CV
 2. **Feature Factory** — RDKit descriptors, Morgan/MACCS/AtomPair/Topological fingerprints, polymer-physics features, fragment vocabulary
-3. **Retrieval Memory** — fold-safe kNN features from train neighbours
+3. **Retrieval Memory** — fold-safe kNN features from 3 neighbour pools (global / same-target / cross-target priors)
 4. **Target-aware experts** — LightGBM / CatBoost / XGBoost / HistGB per expert group
-5. **Electronic Foundation Network** — shared encoder + 6 real electronic heads + 10 aux physics heads (PyTorch, GPU)
-6. **Tg isolation** — dedicated single-target Tg NN (no shared trunk, no cross features)
-7. **Stacking** — Ridge / ElasticNet / CatBoost meta-model on OOF predictions
-8. **PI1M pseudo-labelling** — confidence-filtered semi-supervised retraining
+5. **Electronic Foundation Network** — archived behind `RUN_NNS` (default OFF; not executed in v7)
+6. **Tg isolation** — dedicated single-target Tg NN, archived behind `RUN_NNS` (default OFF)
+7. **Stacking** — Ridge level-1.5 + level-2 meta (reliability + cross-target features) on OOF predictions
+8. **PI1M pseudo-labelling** — deferred to v8 (code present, `USE_PSEUDO=False`)
 9. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
+
+**v7 experiment:** three-arm ablation (BASE / FULL / RETR-only) per target with LGB; submitted config = FULL (4 GBMs + L1.5 Ridge + L2 meta).
 
 ## Rule compliance notes
 - **No hand-labelling of test data.** All retrieval features use **train labels only**.
@@ -77,6 +79,7 @@ FIG = os.path.join(WORK, "figures"); os.makedirs(FIG, exist_ok=True)
 GLOBAL_FOLDS = 5 if SMOKE else 10
 EFN_EPOCHS = 15 if SMOKE else 40
 TGNN_EPOCHS = 15 if SMOKE else 40
+RUN_NNS = False   # v7: EFN/TgNN code archived in notebook, not executed. Flip True to re-enable.
 print("ON_KAGGLE =", ON_KAGGLE)
 print("WORK =", WORK)
 print("SMOKE =", SMOKE, "| GLOBAL_FOLDS =", GLOBAL_FOLDS)
@@ -646,28 +649,31 @@ def efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup_, folds, epochs,
             torch.cuda.empty_cache()
     return oof, te
 
-# ---- standardize inputs for NN (global, shared by EFN + tgnn) ----
-from sklearn.preprocessing import StandardScaler
-sc = StandardScaler()
-Xs = sc.fit_transform(pd.concat([Xtr, Xte], axis=0).values)
-Xtr_s, Xte_s = Xs[:len(dedup)], Xs[len(dedup):]
+if RUN_NNS:
+    # ---- standardize inputs for NN (global, shared by EFN + tgnn) ----
+    from sklearn.preprocessing import StandardScaler
+    sc = StandardScaler()
+    Xs = sc.fit_transform(pd.concat([Xtr, Xte], axis=0).values)
+    Xtr_s, Xte_s = Xs[:len(dedup)], Xs[len(dedup):]
 
-# ---- real target matrix (NaN where a target is absent for a row) ----
-real_y = np.full((len(dedup), len(ELECTRONIC_TARGETS)), np.nan)
-for j, t in enumerate(ELECTRONIC_TARGETS):
-    mm = (dedup["target_type"] == t).values
-    real_y[mm, j] = Y[mm]
+    # ---- real target matrix (NaN where a target is absent for a row) ----
+    real_y = np.full((len(dedup), len(ELECTRONIC_TARGETS)), np.nan)
+    for j, t in enumerate(ELECTRONIC_TARGETS):
+        mm = (dedup["target_type"] == t).values
+        real_y[mm, j] = Y[mm]
 
-print("Training Electronic Foundation Network...")
-t0 = time.time()
-efn_oof, efn_te = efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup, folds,
-                                  epochs=EFN_EPOCHS)
-print(f"EFN done in {time.time()-t0:.0f}s")
-for tt in ELECTRONIC_TARGETS:
-    m = (dedup["target_type"] == tt).values
-    r = record("efn_" + tt, tt, efn_oof[tt], efn_te[tt])
-    print(f"  efn {tt}: RMSE={r:.4f}")
-save_oof_artifact("efn", efn_oof, efn_te)""")
+    print("Training Electronic Foundation Network...")
+    t0 = time.time()
+    efn_oof, efn_te = efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup, folds,
+                                      epochs=EFN_EPOCHS)
+    print(f"EFN done in {time.time()-t0:.0f}s")
+    for tt in ELECTRONIC_TARGETS:
+        m = (dedup["target_type"] == tt).values
+        r = record("efn_" + tt, tt, efn_oof[tt], efn_te[tt])
+        print(f"  efn {tt}: RMSE={r:.4f}")
+    save_oof_artifact("efn", efn_oof, efn_te)
+else:
+    print("EFN skipped (RUN_NNS=False).")""")
 
 M("""## Layer 6 — Tg isolation (dedicated single-target TgNN)
 
@@ -724,13 +730,16 @@ def tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup_, folds, epochs, bs=128, lr=1e-3, wd
             torch.cuda.empty_cache()
     return saved, oof, te_pred
 
-print("Training Tg NN (isolated)...")
-t0 = time.time()
-tg_model, tg_oof, tg_te = tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup, folds, epochs=TGNN_EPOCHS)
-print(f"TgNN done in {time.time()-t0:.0f}s")
-r = record("tgnn_tg", "tg", tg_oof, tg_te)
-print(f"  tgnn tg: RMSE={r:.4f}")
-save_oof_artifact("tgnn", {"tg": tg_oof}, {"tg": tg_te})""")
+if RUN_NNS:
+    print("Training Tg NN (isolated)...")
+    t0 = time.time()
+    tg_model, tg_oof, tg_te = tgnn_fit_predict(Xtr_s, Xte_s, Y, dedup, folds, epochs=TGNN_EPOCHS)
+    print(f"TgNN done in {time.time()-t0:.0f}s")
+    r = record("tgnn_tg", "tg", tg_oof, tg_te)
+    print(f"  tgnn tg: RMSE={r:.4f}")
+    save_oof_artifact("tgnn", {"tg": tg_oof}, {"tg": tg_te})
+else:
+    print("TgNN skipped (RUN_NNS=False).")""")
 
 M("""## Layer 7 — GNN (archived, not in runtime path)
 
@@ -806,8 +815,8 @@ Level-2 (electronic cluster only): per-target Ridge meta on own base OOFs + reli
 Level-2 output = final predictions.""")
 P("""from sklearn.linear_model import Ridge
 
-BASE_MODELS_ELEC = ["lgb","cat","xgb","hgb","efn"]
-BASE_MODELS_TG = ["lgb","cat","xgb","hgb","tgnn"]
+BASE_MODELS_ELEC = ["lgb","cat","xgb","hgb","efn"] if RUN_NNS else ["lgb","cat","xgb","hgb"]
+BASE_MODELS_TG = ["lgb","cat","xgb","hgb","tgnn"] if RUN_NNS else ["lgb","cat","xgb","hgb"]
 
 def base_models_for(tt):
     return BASE_MODELS_TG if tt == "tg" else BASE_MODELS_ELEC
