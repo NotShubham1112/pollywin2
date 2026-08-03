@@ -480,6 +480,65 @@ def build_pool_c(sim10, idx10, target_vals):
         out[f"ct_{t}_count"] = cnt[:, j].astype(np.float32)
     return out""")
 
+P("""def retrieval_oof_features():
+    out = {c: np.zeros(len(dedup), dtype=np.float32) for c in RETR_ALL_COLS}
+    for f in range(GLOBAL_FOLDS):
+        q = folds == f
+        S_m = S_tr[q].copy()
+        S_m[:, folds == f] = -1.0
+        g, idx10 = build_pool_a(S_m)
+        sim10 = np.take_along_axis(S_m, idx10, axis=1)
+        bcol = build_pool_b(S_m, dedup["target_type"].values[q], cand_tt, cand_tgt)
+        ccol = build_pool_c(sim10, idx10, target_vals)
+        for c, v in {**g, **bcol, **ccol}.items():
+            out[c][q] = v.astype(np.float32)
+    return out
+
+def retrieval_test_features():
+    S_m = S_te
+    g, idx10 = build_pool_a(S_m)
+    sim10 = np.take_along_axis(S_m, idx10, axis=1)
+    bcol = build_pool_b(S_m, test["target_type"].values, cand_tt, cand_tgt)
+    ccol = build_pool_c(sim10, idx10, target_vals)
+    return {c: v.astype(np.float32) for c, v in {**g, **bcol, **ccol}.items()}
+
+cand_tt = dedup["target_type"].values
+cand_tgt = dedup["target"].values
+
+print("Computing fold-safe retrieval features (Pools A/B/C)...")
+t0 = time.time()
+oof_r = retrieval_oof_features()
+te_r = retrieval_test_features()
+print(f"retrieval features in {time.time()-t0:.0f}s")
+
+for c in RETR_ALL_COLS:
+    Xtr[c] = oof_r[c]
+    Xte[c] = te_r[c]
+print("added", len(RETR_ALL_COLS), "retrieval columns ->", Xtr.shape, Xte.shape)
+
+pd.DataFrame(oof_r).to_parquet(os.path.join(WORK, "Xtr_retr.parquet"), index=False)
+pd.DataFrame(te_r).to_parquet(os.path.join(WORK, "Xte_retr.parquet"), index=False)
+Xtr.to_pickle(os.path.join(WORK, "Xtr_full.pkl"))
+Xte.to_pickle(os.path.join(WORK, "Xte_full.pkl"))
+print("saved Xtr_retr.parquet, Xte_retr.parquet, Xtr_full.pkl, Xte_full.pkl")
+
+_aud = pd.DataFrame({
+    "subset": np.repeat(["train", "test"], [len(dedup), len(test)]),
+    "id": np.concatenate([np.arange(len(dedup)), test["id"].values]),
+    "target_type": np.concatenate([dedup["target_type"].values, test["target_type"].values]),
+    "top1_sim": np.concatenate([Xtr["g_top1_sim"].values, Xte["g_top1_sim"].values]),
+    "top3_sim": np.concatenate([Xtr["g_top3_sim"].values, Xte["g_top3_sim"].values]),
+    "top5_sim": np.concatenate([Xtr["g_top5_sim"].values, Xte["g_top5_sim"].values]),
+    "g_exact_twin": np.concatenate([Xtr["g_exact_twin"].values, Xte["g_exact_twin"].values]),
+    "g_density_95": np.concatenate([Xtr["g_density_95"].values, Xte["g_density_95"].values]),
+    "g_density_90": np.concatenate([Xtr["g_density_90"].values, Xte["g_density_90"].values]),
+    "g_density_85": np.concatenate([Xtr["g_density_85"].values, Xte["g_density_85"].values]),
+})
+_aud.to_csv(os.path.join(WORK, "retrieval_audit.csv"), index=False)
+print("saved retrieval_audit.csv", _aud.shape)
+print("Train exact twins:", int(Xtr["g_exact_twin"].sum()),
+      "| Test exact twins:", int(Xte["g_exact_twin"].sum()))""")
+
 M("""## Validation harness — GroupKFold per target, OOF scoring (RMSE)
 
 Each target is validated with its own fold split. We store OOF predictions of every base model

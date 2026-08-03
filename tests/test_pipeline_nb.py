@@ -139,6 +139,25 @@ def test_layer3_pool_column_grid():
     assert '"ct_{t}_wmean_sq"' in code
     assert 'TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]' in code
 
+def test_layer3_fold_safety_persistence():
+    code, _ = _build()
+    assert "S_m[:, folds == f] = -1.0" in code
+    assert "cand_tt" in code
+    assert "retrieval_audit.csv" in code
+    assert "retrieval_test_features" in code
+
+def test_retrieval_persistence():
+    code, _ = _build()
+    assert "Xtr_retr.parquet" in code
+    assert "Xte_retr.parquet" in code
+    assert "Xtr_full.pkl" in code
+
+def test_pool_c_gets_2d_sim10():
+    code, _ = _build()
+    assert "sim10 = np.take_along_axis(S_m, idx10, axis=1)" in code
+    assert "build_pool_c(sim10, idx10, target_vals)" in code
+    assert "build_pool_c(g[\"g_top10_sim\"]" not in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
