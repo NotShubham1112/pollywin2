@@ -308,7 +308,7 @@ def test_layer3_pool_column_grid():
     assert '"st_tgt_wmean_sq"' in code
     assert '"ct_{t}_count"' in code
     assert '"ct_{t}_wmean_sq"' in code
-    assert '"TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]"' in code
+    assert 'TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]' in code
 ```
 
 - [ ] **Step 2: Run tests to verify the new test fails**
@@ -467,8 +467,9 @@ def retrieval_oof_features():
         S_m = S_tr[q].copy()
         S_m[:, folds == f] = -1.0
         g, idx10 = build_pool_a(S_m)
+        sim10 = np.take_along_axis(S_m, idx10, axis=1)
         bcol = build_pool_b(S_m, dedup["target_type"].values[q], cand_tt, cand_tgt)
-        ccol = build_pool_c(g["g_top10_sim"], idx10, target_vals)
+        ccol = build_pool_c(sim10, idx10, target_vals)
         for c, v in {**g, **bcol, **ccol}.items():
             out[c][q] = v.astype(np.float32)
     return out
@@ -476,8 +477,9 @@ def retrieval_oof_features():
 def retrieval_test_features():
     S_m = S_te
     g, idx10 = build_pool_a(S_m)
+    sim10 = np.take_along_axis(S_m, idx10, axis=1)
     bcol = build_pool_b(S_m, test["target_type"].values, cand_tt, cand_tgt)
-    ccol = build_pool_c(g["g_top10_sim"], idx10, target_vals)
+    ccol = build_pool_c(sim10, idx10, target_vals)
     return {c: v.astype(np.float32) for c, v in {**g, **bcol, **ccol}.items()}
 
 cand_tt = dedup["target_type"].values
@@ -518,6 +520,8 @@ print("Train exact twins:", int(Xtr["g_exact_twin"].sum()),
       "| Test exact twins:", int(Xte["g_exact_twin"].sum()))
 ```
 
+(Plan-correction note, controller-applied during implementation: the original cell passed `g["g_top10_sim"]` — a 1D per-row 10th-value column — into `build_pool_c`, whose first parameter `sim10` is the **2D (n,10)** top-10 sim matrix and indexes it as such (`(sim10 >= -0.5)[:, :, None]`), which would raise `IndexError`. The cell above reconstructs `sim10 = np.take_along_axis(S_m, idx10, axis=1)` — the same operation `topk_from_sim` performs internally — before the `build_pool_c` calls. This is the implemented, tested form. Regression test `test_retrieval_driver_uses_2d_sim10` covers it.)
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `python tests/test_pipeline_nb.py`
@@ -529,10 +533,12 @@ Regenerate and execute the notebook head in smoke mode to prove the retrieval ce
 
 ```powershell
 python build_pipeline_nb.py
-$env:POLYWIN_SMOKE="1"; python -m jupyter nbconvert --to notebook --execute "AISEHack_Round2_Pipeline.ipynb" --output "v7_smoke.ipynb" --output-dir "C:\Users\shubh\AppData\Local\Temp\opencode\v7-smoke"
+$env:POLYWIN_SMOKE="1"; python -m jupyter nbconvert --to notebook --execute "AISEHack_Round2_Pipeline.ipynb" --output "v7_smoke.ipynb" --output-dir "C:\Users\shubh\AppData\Local\Temp\opencode\v7-smoke" --ExecutePreprocessor.timeout=3600
 ```
 
-Expected: `S_tr`/`S_te` shapes print as `(7406, 7406) (4940, 7406)`, `added 57 retrieval columns -> (7406, N+57) (4940, M+57)`, and `saved Xtr_retr.parquet, Xte_retr.parquet, Xtr_full.pkl, Xte_full.pkl` plus `saved retrieval_audit.csv (12346, 9)`. (The notebook may fail later at the EFN/TgNN-skipped cells only if those were mis-wired; Task 1 guarantees they are inert. Full-stack success is verified in Task 8.)
+(NOTE: `--ExecutePreprocessor.timeout=3600` is required — `nbconvert` defaults to a 30s-per-cell timeout, and the S_tr/S_te jaccard cell plus the Layer-4 GBM cell each run minutes. Without the flag the smoke dies on a TimeoutError, not a real bug.)
+
+Expected: `S_tr`/`S_te` shapes print as `(7406, 7406) (4940, 7406)`, `added 57 retrieval columns -> (7406, N+57) (4940, M+57)`, and `saved Xtr_retr.parquet, Xte_retr.parquet, Xtr_full.pkl, Xte_full.pkl` plus `saved retrieval_audit.csv (12346, 10)`. (The audit frame has 10 columns: subset, id, target_type, top1_sim, top3_sim, top5_sim, g_exact_twin, g_density_95, g_density_90, g_density_85.) The notebook may fail later at the EFN/TgNN-skipped cells only if those were mis-wired; Task 1 guarantees they are inert. Full-stack success is verified in Task 8.
 
 - [ ] **Step 6: Commit**
 
@@ -563,6 +569,7 @@ def test_ablation_cell():
     assert "retrieval_gain_share" in code
     assert '("base", BASE_COLS), ("full", list(Xtr.columns)), ("retr", RETR_ALL_COLS)' in code
     assert "importance_full" in code
+    assert "rmse_metric(Y[sel]" in code
 ```
 
 - [ ] **Step 2: Run tests to verify the new test fails**
@@ -615,13 +622,12 @@ _bin = np.clip(np.digitize(_dens, _qs[1:-1]), 0, 3)
 _drows = []
 for tt in TARGETS:
     m = (dedup["target_type"] == tt).values
-    y = Y[m]
     for b in range(4):
         sel = m & (_bin == b)
         if sel.sum() < 20:
             continue
-        r_base = rmse_metric(y[sel], oof_preds[(tt, "base")][sel])
-        r_full = rmse_metric(y[sel], oof_preds[(tt, "full")][sel])
+        r_base = rmse_metric(Y[sel], oof_preds[(tt, "base")][sel])
+        r_full = rmse_metric(Y[sel], oof_preds[(tt, "full")][sel])
         _drows.append({"target": tt, "density_bucket": int(b), "n": int(sel.sum()),
                        "base_rmse": r_base, "full_rmse": r_full, "delta": r_full - r_base})
 ablation_density = pd.DataFrame(_drows)
@@ -643,6 +649,8 @@ ablation_density.to_csv(os.path.join(WORK, "ablation_density.csv"), index=False)
 print("saved ablation_lgb.csv, ablation_density.csv")
 print(ablation_lgb.pivot(index="target", columns="arm", values="rmse").round(4).to_string())
 ```
+
+(Plan-correction note, controller-applied pre-implementation: the original cell set `y = Y[m]` (member rows only, length n_m) then indexed `y[sel]` with `sel = m & (_bin == b)`, a full-dedup-length boolean (7406) — a boolean-index length mismatch guaranteed to raise `IndexError` when n_m < 7406. `Y` is `dedup["target"].values` (dedup-length), so the fixed form `rmse_metric(Y[sel], ...)` is shape-correct because `sel` is already a subset of `m`. Regression assertion `rmse_metric(Y[sel]` added to the test.)
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -777,6 +785,7 @@ def test_figures_15_20():
     for n in ["15_ablation_base_full_retr.png", "16_retrieval_delta.png", "17_oof_pred_corr.png",
               "18_retrieval_feat_importance.png", "19_pool_contribution.png", "20_lb_progression.png"]:
         assert n in code
+    assert 'pivot(index="target", columns="arm", values="rmse").reindex(TARGETS)' in code
 ```
 
 - [ ] **Step 2: Run tests to verify the new test fails**
@@ -790,7 +799,7 @@ Insert figure cell F2 after cell F1:
 
 ```python
 # ================= v7 ablation + stack + LB visuals =================
-_piv = ablation_lgb.pivot(index="target", columns="arm", values="rmse")[["base", "full", "retr"]]
+_piv = ablation_lgb.pivot(index="target", columns="arm", values="rmse").reindex(TARGETS)[["base", "full", "retr"]]
 fig, ax = plt.subplots(figsize=(11, 5))
 x = np.arange(len(TARGETS)); w = 0.25
 for i, arm in enumerate(["base", "full", "retr"]):
@@ -850,6 +859,8 @@ ax.set_ylabel("public LB"); ax.set_title("Leaderboard progression"); ax.grid(alp
 savefig(fig, "20_lb_progression.png")
 ```
 
+(Plan-correction note, controller-applied pre-implementation: `DataFrame.pivot` sorts its index alphabetically (`eea, egb, egc, ei, eps, nc, tg`), so the original `_piv[arm].values` would misalign with `TARGETS` order (`tg, egc, egb, eps, nc, ei, eea`) in figures 15 and 16 — every bar would be labeled with the wrong target's RMSE. The cell above adds `.reindex(TARGETS)` so `_piv` rows and `_delta` are in `TARGETS` order. Regression assertion: the test below asserts `"pivot(index=\"target\", columns=\"arm\", values=\"rmse\").reindex(TARGETS)"` is present.)
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `python tests/test_pipeline_nb.py`
@@ -882,13 +893,15 @@ Expected: all 22 tests PASS.
 
 ```powershell
 python build_pipeline_nb.py
-$env:POLYWIN_SMOKE="1"; python -m jupyter nbconvert --to notebook --execute "AISEHack_Round2_Pipeline.ipynb" --output "v7_smoke.ipynb" --output-dir "C:\Users\shubh\AppData\Local\Temp\opencode\v7-smoke"
+$env:POLYWIN_SMOKE="1"; python -m jupyter nbconvert --to notebook --execute "AISEHack_Round2_Pipeline.ipynb" --output "v7_smoke.ipynb" --output-dir "C:\Users\shubh\AppData\Local\Temp\opencode\v7-smoke" --ExecutePreprocessor.timeout=3600
 ```
+
+(NOTE: `--ExecutePreprocessor.timeout=3600` is required — `nbconvert` defaults to a 30s-per-cell timeout, and the S_tr/S_te jaccard cell plus the Layer-4 GBM cell each run minutes. Without the flag the smoke dies on a TimeoutError, not a real bug.)
 
 Expected, in order:
 1. `global sim matrices (7406, 7406) (4940, 7406) float32 ...`
 2. `added 57 retrieval columns -> (7406, N+57) (4940, M+57)`
-3. `saved retrieval_audit.csv (12346, 9)`
+3. `saved retrieval_audit.csv (12346, 10)`
 4. Ablation lines: `  <tt> <arm>: RMSE=...` for every (target, arm), then `saved ablation_lgb.csv, ablation_density.csv`
 5. `saved 08_cross_target_corr.png`, `10_similarity_dist.png` ... `20_lb_progression.png`
 6. `==== PIPELINE COMPLETE ====` and `submission saved: ...` with `(4940, 2)`.
