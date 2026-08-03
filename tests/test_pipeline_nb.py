@@ -121,6 +121,14 @@ def test_header_v7_architecture():
     assert "Retrieval Memory" in md
     assert "ablation" in md.lower()
 
+def test_layer3_global_sim():
+    code, _ = _build()
+    assert 'S_tr = (1.0 - cdist(retr_tr, retr_tr, metric="jaccard")).astype(np.float32)' in code
+    assert 'S_te = (1.0 - cdist(retr_te, retr_tr, metric="jaccard")).astype(np.float32)' in code
+    assert "def topk_from_sim" in code
+    assert "K_RETR" in code
+    assert "def wmean_sq" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

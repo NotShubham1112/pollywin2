@@ -352,19 +352,20 @@ for j, name in enumerate(AUX_TASKS):
     v = aux_tr[:, j]
     print(f"  {name:24s} mean={np.nanmean(v):.4f} std={np.nanstd(v):.4f}")""")
 
-M("""## Layer 3 — Retrieval Memory (fold-safe kNN features)
+M("""## Layer 3 — Retrieval Memory (3 neighbour pools, fold-safe)
 
-Because 17% of test SMILES have near-exact train twins, we add **kNN similarity features**:
-- nearest-neighbour similarity (Tanimoto on Morgan r2),
-- mean of top-5 similarities,
-- distance entropy,
-- neighbour property statistics (mean/median of target of top-k neighbours).
+kNN retrieval over polymers (Morgan r2/512, Tanimoto). Three pools per query:
+- **Pool A — global chemistry**: nearest neighbours over all train rows (all target types).
+- **Pool B — same-target**: nearest neighbours within the query's own target type.
+- **Pool C — cross-target priors**: neighbour target values across all 7 targets (a neighbour
+  labelled only tg/egc/egb still contributes a prior to an eea prediction).
 
-**Rule-safety:** neighbours are always drawn from **train labels only** (never test labels).
-**CV-safety:** during cross-validation, neighbours are drawn **only from the training folds**
-so OOF scores are honest. For test prediction, neighbours come from the full train set.""")
+**Rule-safety:** neighbours always come from train labels only.
+**CV-safety:** during CV, neighbours are drawn only from training folds (`fold != f`); because
+the global GroupKFold is canon-keyed, same-polymer rows across target types share a fold and are
+excluded together. The global jaccard matrix is computed once and fold-masked per query.""")
 P("""from scipy.spatial.distance import cdist
-from scipy.stats import entropy as _ent
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 
 def morgan_bit_vectors(smiles_list, radius=2, nbits=512):
     gen = GetMorganGenerator(radius=radius, fpSize=nbits)
@@ -374,59 +375,36 @@ def morgan_bit_vectors(smiles_list, radius=2, nbits=512):
         rows.append(np.array(gen.GetFingerprint(m) if m else np.zeros(nbits), dtype=np.float32))
     return np.stack(rows)
 
+K_RETR = [1, 3, 5, 10]
+
+def topk_from_sim(S_m, k):
+    idx = np.argpartition(-S_m, kth=k - 1, axis=1)[:, :k]
+    sim = np.take_along_axis(S_m, idx, axis=1)
+    order = np.argsort(-sim, axis=1)
+    return np.take_along_axis(sim, order, axis=1), np.take_along_axis(idx, order, axis=1)
+
+def density_cols(S_m, thrs=(0.95, 0.90, 0.85)):
+    n_valid = (S_m >= 0.0).sum(axis=1).astype(np.float32)
+    n_valid[n_valid == 0] = 1.0
+    return [(S_m > thr).sum(axis=1) / n_valid for thr in thrs]
+
+def wmean_sq(sim, vals):
+    w = np.maximum(sim, 0.0) ** 2
+    v = np.nan_to_num(vals, nan=0.0)
+    den = w.sum(axis=1); den[den == 0] = 1.0
+    return (w * v).sum(axis=1) / den
+
 print("Morgan vectors (r2,512) for retrieval...")
 t0 = time.time()
 retr_tr = morgan_bit_vectors(dedup["smiles"].tolist())
 retr_te = morgan_bit_vectors(test["smiles"].tolist())
 print(f"retrieval fingerprints {retr_tr.shape} {retr_te.shape} in {time.time()-t0:.0f}s")
 
-def kNN_features(query_fp, cand_fp, cand_target, k=10):
-    '''For each query row, features derived from its k nearest candidates.'''
-    sim = 1.0 - cdist(query_fp, cand_fp, metric="jaccard")  # n_q x n_c
-    # top-k indices (all candidates incl. self when query==cand)
-    idx = np.argsort(-sim, axis=1)[:, :k]
-    top_sim = np.take_along_axis(sim, idx, axis=1)
-    tgt = cand_target.values
-    nb = tgt[idx]
-    feat = np.zeros((len(query_fp), 6), dtype=np.float32)
-    feat[:, 0] = top_sim[:, 0]                     # NN similarity
-    feat[:, 1] = top_sim[:, :5].mean(axis=1)       # mean top-5 sim
-    feat[:, 2] = -np.sum(top_sim * np.log(top_sim + 1e-12), axis=1)  # distance entropy
-    feat[:, 3] = nb.mean(axis=1)                    # mean neighbour target
-    feat[:, 4] = nb[:, :5].mean(axis=1)             # mean top-5 neighbour target
-    feat[:, 5] = (top_sim[:, 0] > 0.9).astype(np.float32)  # near-exact-twin flag
-    return feat
-
-KNN_COLS = ["knn_nn_sim","knn_top5_sim","knn_dist_entropy","knn_nb_mean","knn_nb5_mean","knn_near_twin"]
-
-def fold_safe_knn_fit_predict(Xtr_, dedup_, Xte_, retr_tr_, retr_te_, folds, k=10, per_type=True):
-    '''Return OOF knn features for train and knn features for test.
-    For each target_type, knn neighbours are drawn only from the same target_type training folds.'''
-    oof = np.zeros((len(Xtr_), len(KNN_COLS)), dtype=np.float32)
-    te = np.zeros((len(Xte_), len(KNN_COLS)), dtype=np.float32)
-    for tt in dedup_["target_type"].unique():
-        m_tr = (dedup_["target_type"] == tt).values
-        m_te = (test["target_type"] == tt).values
-        if m_tr.sum() < 5:
-            continue
-        tgt = dedup_["target"].values
-        for f in range(folds.max() + 1):
-            cand = (dedup_["fold"] != f).values & m_tr
-            q = (dedup_["fold"] == f).values & m_tr
-            if q.sum() == 0: continue
-            oof[q] = kNN_features(retr_tr_[q], retr_tr_[cand], pd.Series(tgt[cand]), k=k)
-        te[m_te] = kNN_features(retr_te_[m_te], retr_tr_[m_tr], pd.Series(tgt[m_tr]), k=k)
-    return oof, te
-
-print("Computing fold-safe retrieval features...")
+print("Computing global jaccard similarity matrices (once)...")
 t0 = time.time()
-knn_oof, knn_te = fold_safe_knn_fit_predict(Xtr, dedup, Xte, retr_tr, retr_te, folds)
-print(f"kNN features in {time.time()-t0:.0f}s  oof {knn_oof.shape} test {knn_te.shape}")
-for i, c in enumerate(KNN_COLS):
-    Xtr[c] = knn_oof[:, i]
-    Xte[c] = knn_te[:, i]
-print("Train overlap rows with near twin:", (Xtr["knn_near_twin"] > 0).sum())
-print("Test  rows with near twin:", (Xte["knn_near_twin"] > 0).sum(), "/", len(Xte))""")
+S_tr = (1.0 - cdist(retr_tr, retr_tr, metric="jaccard")).astype(np.float32)
+S_te = (1.0 - cdist(retr_te, retr_tr, metric="jaccard")).astype(np.float32)
+print(f"global sim matrices {S_tr.shape} {S_te.shape} float32 in {time.time()-t0:.0f}s")""")
 
 M("""## Validation harness — GroupKFold per target, OOF scoring (RMSE)
 
