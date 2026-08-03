@@ -27,7 +27,7 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 8. **PI1M pseudo-labelling** — deferred to v8 (code present, `USE_PSEUDO=False`)
 9. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
 
-**v7 experiment:** three-arm ablation (BASE / FULL / RETR-only) per target with LGB; submitted config = FULL (4 GBMs + L1.5 Ridge + L2 meta).
+**v7 experiment:** three-arm ablation (BASE / FULL / RETR-only) per target with LGB. **Result: FAILED honest OOF** — FULL (with retrieval columns) is worse than BASE on all 7 targets; the v7 FULL config was **not submitted**. Standing LB remains v6 = 0.847. v8 pivots to PI1M pseudo-labelling.
 
 ## Rule compliance notes
 - **No hand-labelling of test data.** All retrieval features use **train labels only**.
@@ -1380,6 +1380,8 @@ _lb = pd.DataFrame({"version": ["v4", "v5", "v6", "v7"],
                     "lb": [0.828, np.nan, 0.847, np.nan]})
 fig, ax = plt.subplots(figsize=(6, 4))
 ax.plot(_lb["version"], _lb["lb"], marker="o", color="#d1495b")
+ax.annotate("v7 retrieval failed -\nnot submitted", xy=(3, 0.82), xytext=(2.3, 0.80),
+            arrowprops=dict(arrowstyle="->", color="#555555"), fontsize=8, ha="center")
 ax.set_ylabel("public LB"); ax.set_title("Leaderboard progression"); ax.grid(alpha=0.3)
 savefig(fig, "20_lb_progression.png")""")
 
