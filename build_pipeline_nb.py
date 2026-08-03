@@ -1322,6 +1322,66 @@ for ax, tt in zip(axes.ravel()[:7], TARGETS):
     ax.set_title(tt); ax.set_xlabel("g_top1_sim"); ax.set_ylabel("|OOF error|")
 axes.ravel()[7].axis("off"); savefig(fig, "14_sim_vs_oof_error.png")""")
 
+P("""# ================= v7 ablation + stack + LB visuals =================
+_piv = ablation_lgb.pivot(index="target", columns="arm", values="rmse").reindex(TARGETS)[["base", "full", "retr"]]
+fig, ax = plt.subplots(figsize=(11, 5))
+x = np.arange(len(TARGETS)); w = 0.25
+for i, arm in enumerate(["base", "full", "retr"]):
+    ax.bar(x + (i - 1) * w, _piv[arm].values, w, label=arm)
+ax.set_xticks(x); ax.set_xticklabels(TARGETS)
+ax.set_ylabel("OOF RMSE (LGB)"); ax.set_title("Retrieval ablation per target"); ax.legend()
+savefig(fig, "15_ablation_base_full_retr.png")
+
+_delta = _piv["full"] - _piv["base"]
+fig, ax = plt.subplots(figsize=(9, 4))
+ax.bar(TARGETS, _delta.values, color=["#2a6fb0" if d < 0 else "#d1495b" for d in _delta])
+ax.axhline(0, color="k", lw=0.8)
+ax.set_ylabel("FULL - BASE OOF RMSE"); ax.set_title("Retrieval contribution (negative = helps)")
+savefig(fig, "16_retrieval_delta.png")
+
+_pred_parts = {b: [] for b in ("lgb", "cat", "xgb", "hgb")}
+for tt in TARGETS:
+    m = (dedup["target_type"] == tt).values
+    for b in _pred_parts:
+        k = store_key(b, tt)
+        if k in oof_store:
+            _pred_parts[b].append(oof_store[k])
+_ok_b = [b for b in _pred_parts if len(_pred_parts[b]) == len(TARGETS)]
+_M = np.column_stack([np.concatenate(_pred_parts[b]) for b in _ok_b])
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.heatmap(np.corrcoef(_M, rowvar=False), xticklabels=_ok_b, yticklabels=_ok_b,
+            annot=True, fmt=".3f", cmap="RdYlBu_r", vmin=-1, vmax=1, ax=ax)
+ax.set_title("Base-model OOF prediction correlation")
+savefig(fig, "17_oof_pred_corr.png")
+
+_imp_avg = pd.DataFrame({tt: importance_full[tt] for tt in TARGETS}).mean(axis=1)
+_top = _imp_avg[_imp_avg.index.isin(RETR_ALL_COLS)].sort_values(ascending=False).head(15)
+fig, ax = plt.subplots(figsize=(8, 6))
+ax.barh(_top.index[::-1], _top.values[::-1], color="#2a6fb0")
+ax.set_xlabel("mean LGB gain over targets")
+ax.set_title("Top-15 retrieval features by gain (FULL config)")
+savefig(fig, "18_retrieval_feat_importance.png")
+
+_gsum = _imp_avg.reindex(RETR_ALL_COLS).fillna(0.0)
+_pool_share = pd.Series({
+    "Pool A": _gsum[RETR_COLS_A].sum(),
+    "Pool B": _gsum[RETR_COLS_B].sum(),
+    "Pool C": _gsum[RETR_COLS_C].sum(),
+})
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.bar(_pool_share.index, _pool_share.values / _pool_share.sum(),
+       color=["#2a6fb0", "#f0a202", "#d1495b"])
+ax.set_ylabel("share of retrieval LGB gain")
+ax.set_title("Pool contribution to retrieval importance")
+savefig(fig, "19_pool_contribution.png")
+
+_lb = pd.DataFrame({"version": ["v4", "v5", "v6", "v7"],
+                    "lb": [0.828, np.nan, 0.847, np.nan]})
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.plot(_lb["version"], _lb["lb"], marker="o", color="#d1495b")
+ax.set_ylabel("public LB"); ax.set_title("Leaderboard progression"); ax.grid(alpha=0.3)
+savefig(fig, "20_lb_progression.png")""")
+
 M("""## Submission — `submission.csv`
 
 Final test predictions = **stacked ensemble**, with per-target physics bounds:

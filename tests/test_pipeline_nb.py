@@ -174,6 +174,13 @@ def test_figures_10_14_and_overlap():
         assert n in code
     assert "Shared-polymer count" in code
 
+def test_figures_15_20():
+    code, _ = _build()
+    for n in ["15_ablation_base_full_retr.png", "16_retrieval_delta.png", "17_oof_pred_corr.png",
+              "18_retrieval_feat_importance.png", "19_pool_contribution.png", "20_lb_progression.png"]:
+        assert n in code
+    assert 'pivot(index="target", columns="arm", values="rmse").reindex(TARGETS)' in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
