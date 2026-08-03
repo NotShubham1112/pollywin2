@@ -824,9 +824,10 @@ def efn_fit_predict(Xtr_s, Xte_s, real_y, aux_tr, aux_te, dedup_, folds, epochs,
             torch.cuda.empty_cache()
     return oof, te
 
+from sklearn.preprocessing import StandardScaler   # module-level: also consumed by L1.5/L2 Ridge stacks
+
 if RUN_NNS:
     # ---- standardize inputs for NN (global, shared by EFN + tgnn) ----
-    from sklearn.preprocessing import StandardScaler
     sc = StandardScaler()
     Xs = sc.fit_transform(pd.concat([Xtr, Xte], axis=0).values)
     Xtr_s, Xte_s = Xs[:len(dedup)], Xs[len(dedup):]

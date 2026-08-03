@@ -116,6 +116,13 @@ def test_run_nns_gate():
     assert 'BASE_MODELS_TG = ["lgb","cat","xgb","hgb","tgnn"] if RUN_NNS else ["lgb","cat","xgb","hgb"]' in code
     assert "archived" in md
 
+def test_standardscaler_unconditional():
+    code, _ = _build()
+    lines = code.splitlines()
+    imp = next(i for i, l in enumerate(lines) if "from sklearn.preprocessing import StandardScaler" in l)
+    gate = next(i for i, l in enumerate(lines) if l.strip() == "if RUN_NNS:")
+    assert imp < gate, "StandardScaler import must not sit inside the RUN_NNS gate (L1.5/L2 Ridge stacks consume it)"
+
 def test_header_v7_architecture():
     code, md = _build()
     assert "Retrieval Memory" in md
