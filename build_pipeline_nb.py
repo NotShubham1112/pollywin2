@@ -1257,9 +1257,16 @@ for i, a in enumerate(TARGETS):
         ct[i, j] = spearmanr(aa, bb).statistic
 _ctdf = pd.DataFrame(ct, index=TARGETS, columns=TARGETS)
 _ctdf.round(4).to_csv(os.path.join(WORK, "cross_target_corr.csv"))
-fig, ax = plt.subplots(figsize=(8, 7))
-sns.heatmap(_ctdf.astype(float), cmap="RdBu_r", vmin=-1, vmax=1, annot=True, fmt=".2f", ax=ax)
-ax.set_title("Cross-target correlation (shared molecules)")
+_shared = np.zeros((len(TARGETS), len(TARGETS)), dtype=int)
+for i, a in enumerate(TARGETS):
+    for j, b in enumerate(TARGETS):
+        _shared[i, j] = len(set(ct_maps[a]) & set(ct_maps[b]))
+_shdf = pd.DataFrame(_shared, index=TARGETS, columns=TARGETS)
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+sns.heatmap(_ctdf.astype(float), cmap="RdBu_r", vmin=-1, vmax=1, annot=True, fmt=".2f", ax=axes[0])
+axes[0].set_title("Cross-target correlation (shared molecules)")
+sns.heatmap(_shdf, cmap="YlOrRd", annot=True, fmt="d", ax=axes[1])
+axes[1].set_title("Shared-polymer count (canon-keyed)")
 savefig(fig, "08_cross_target_corr.png")
 
 # ---- Fig 9: stack improvement ----
@@ -1275,6 +1282,45 @@ if mc is not None and (mc["model"] == "final").any():
     ax.legend(); savefig(fig, "09_stack_improvement.png")
 
 print("\\nAll judge figures saved to:", FIG)""")
+
+P("""# ================= v7 retrieval diagnostics =================
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(Xtr["g_top1_sim"], bins=50, alpha=0.6, label="train", color="#2a6fb0")
+ax.hist(Xte["g_top1_sim"], bins=50, alpha=0.6, label="test", color="#d1495b")
+ax.set_xlabel("g_top1_sim (Tanimoto, Morgan r2/512)"); ax.set_ylabel("count")
+ax.legend(); ax.set_title("NN similarity distribution")
+savefig(fig, "10_similarity_dist.png")
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.hist(Xtr["g_density_90"], bins=50, color="#2a6fb0")
+ax.set_xlabel("g_density_90"); ax.set_ylabel("count")
+ax.set_title("Neighborhood density (train, frac of pool with sim > 0.90)")
+savefig(fig, "11_neighbor_density.png")
+
+fig, ax = plt.subplots(figsize=(6, 4))
+ax.bar(["train", "test"], [Xtr["g_exact_twin"].mean(), Xte["g_exact_twin"].mean()],
+       color=["#2a6fb0", "#d1495b"])
+ax.set_ylabel("fraction with g_exact_twin=1 (sim >= 0.999)")
+ax.set_title("Exact-twin regime")
+savefig(fig, "12_exact_twin_freq.png")
+
+fig, ax = plt.subplots(figsize=(8, 4))
+g = ablation_density.groupby("density_bucket")["delta"].mean()
+ax.plot(g.index, g.values, marker="o", color="#d1495b")
+ax.axhline(0, color="k", lw=0.8, ls="--")
+ax.set_xlabel("density bucket (g_density_90 quartile, 0=sparsest)")
+ax.set_ylabel("FULL - BASE OOF RMSE")
+ax.set_title("Retrieval gain vs neighbor density (negative = retrieval helps)")
+savefig(fig, "13_retrieval_gain_vs_density.png")
+
+fig, axes = plt.subplots(2, 4, figsize=(14, 6))
+for ax, tt in zip(axes.ravel()[:7], TARGETS):
+    m = (dedup["target_type"] == tt).values
+    yv = Y[m]; yp = FINAL_OOF.get(tt, np.zeros(m.sum()))
+    ax.scatter(Xtr["g_top1_sim"].values[m], np.abs(yv - yp), s=4, alpha=0.4,
+               color=pal[TARGETS.index(tt)])
+    ax.set_title(tt); ax.set_xlabel("g_top1_sim"); ax.set_ylabel("|OOF error|")
+axes.ravel()[7].axis("off"); savefig(fig, "14_sim_vs_oof_error.png")""")
 
 M("""## Submission — `submission.csv`
 

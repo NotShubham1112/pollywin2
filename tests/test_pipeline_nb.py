@@ -167,6 +167,13 @@ def test_ablation_cell():
     assert "importance_full" in code
     assert "rmse_metric(Y[sel]" in code
 
+def test_figures_10_14_and_overlap():
+    code, _ = _build()
+    for n in ["10_similarity_dist.png", "11_neighbor_density.png", "12_exact_twin_freq.png",
+              "13_retrieval_gain_vs_density.png", "14_sim_vs_oof_error.png"]:
+        assert n in code
+    assert "Shared-polymer count" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
