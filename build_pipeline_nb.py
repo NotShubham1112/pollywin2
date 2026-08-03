@@ -54,41 +54,6 @@ warnings.filterwarnings("ignore")
 np.random.seed(42); random.seed(42)
 import torch
 
-def ensure_torch_cuda():
-    \"\"\"Best-effort repair of a broken torch/CUDA pairing; always falls back to CPU.\"\"\"
-    import torch as _t0
-    if not _t0.cuda.is_available():
-        return _t0
-    try:
-        _x = _t0.zeros(1, device="cuda"); _x = _x + 1
-        _t0.cuda.synchronize(); del _x
-        return _t0
-    except Exception as _e:
-        print("CUDA probe failed:", str(_e)[:120], "-> attempting torch cu121 repair")
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
-                               "--index-url", "https://download.pytorch.org/whl/cu121",
-                               "torch==2.2.2"])
-    except Exception as _e:
-        print("torch repair install failed:", str(_e)[:120])
-    for _m in list(sys.modules):
-        if _m == "torch" or _m.startswith("torch."):
-            del sys.modules[_m]
-    import torch
-    if torch.cuda.is_available():
-        try:
-            _x = torch.zeros(1, device="cuda"); _x = _x + 1
-            torch.cuda.synchronize(); del _x
-            print("torch repaired -> CUDA OK:", torch.__version__)
-            return torch
-        except Exception as _e:
-            print("CUDA still failing after repair -> CPU:", str(_e)[:120])
-    else:
-        print("no CUDA after repair -> CPU")
-    return torch
-
-torch = ensure_torch_cuda()
-
 def get_torch_device():
     if torch.cuda.is_available():
         try:
@@ -122,6 +87,7 @@ if torch.cuda.is_available():
 P("""# ---- data path detection ----
 def find_input(base, name):
     for p in [os.path.join(base, name), os.path.join(base, "ppp-round-2", name),
+              os.path.join(base, "competitions", "ppp-round-2", name),
               os.path.join(base, "aisehack-2-0", name)]:
         if os.path.exists(p):
             return p
@@ -917,7 +883,8 @@ def cross_te_features(tt):
     feats, cols = [], []
     for ct in CROSS_MAP[tt]:
         feats.append(np.asarray(L15_TE[ct], dtype=np.float32))
-        cols.append(f"cross_{ct}")
+        feats.append(np.zeros(len(test), dtype=np.float32))
+        cols += [f"cross_{ct}", f"cross_{ct}_miss"]
     if not feats:
         return None, None
     return np.column_stack(feats), cols

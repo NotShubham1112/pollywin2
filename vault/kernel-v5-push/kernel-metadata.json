@@ -1,0 +1,15 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v5",
+  "title": "PolyWin R2 v5",
+  "code_file": "AISEHack_Round2_Pipeline.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": [],
+  "model_sources": []
+}

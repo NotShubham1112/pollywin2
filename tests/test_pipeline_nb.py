@@ -20,7 +20,7 @@ def _build():
 
 def test_cell1_gpu_bootstrap():
     code, _ = _build()
-    assert "def ensure_torch_cuda" in code
+    assert "def get_torch_device" in code
     assert "GLOBAL_FOLDS = 5 if SMOKE else 10" in code
     assert "pipeline_out_smoke" in code
 
@@ -70,6 +70,13 @@ def test_stacking_levels():
     assert "FINAL_OOF" in code
     assert "l15_ridge.parquet" in code
     assert "final_meta.parquet" in code
+
+def test_cross_te_features_matches_oof_cols():
+    code, _ = _build()
+    oof_block = code.split("def cross_oof_features")[1].split("def cross_te_features")[0]
+    te_block = code.split("def cross_te_features")[1]
+    assert 'cols += [f"cross_{ct}", f"cross_{ct}_miss"]' in oof_block
+    assert 'cols += [f"cross_{ct}", f"cross_{ct}_miss"]' in te_block
 
 def test_gbm_artifact_save():
     code, _ = _build()

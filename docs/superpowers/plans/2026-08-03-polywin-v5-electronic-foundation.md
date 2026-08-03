@@ -35,7 +35,9 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `ensure_torch_cuda()` (returns a usable `torch` module), `get_torch_device()` (unchanged behavior), globals `SMOKE`, `GLOBAL_FOLDS`, `EFN_EPOCHS`, `TGNN_EPOCHS`, `WORK` (switches to `vault/pipeline_out_smoke` when smoke + local). All later tasks reference `GLOBAL_FOLDS`, `EFN_EPOCHS`, `TGNN_EPOCHS`, `SMOKE`.
+- Produces: `get_torch_device()` (runtime-probes CUDA, falls back to CPU), globals `SMOKE`, `GLOBAL_FOLDS`, `EFN_EPOCHS`, `TGNN_EPOCHS`, `WORK` (switches to `vault/pipeline_out_smoke` when smoke + local). All later tasks reference `GLOBAL_FOLDS`, `EFN_EPOCHS`, `TGNN_EPOCHS`, `SMOKE`.
+
+> **Deviation (post-plan, approved by user):** the original plan defined an `ensure_torch_cuda()` torch-repair. On the live Kaggle GPU image it proved fatal — the base image ships torch 2.10.0+cu128 which fails the CUDA probe on the assigned GPU, and pip-installing torch 2.2.2+cu121 over it (uninstall or force-reinstall) corrupted the kernel (crashes; 0-byte setup logs). The v4 kernel that succeeded (public 0.828) used the plain probe-and-fallback with NO torch reinstall. Task 1 was reverted to exactly that proven approach.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -64,7 +66,7 @@ def _build():
 
 def test_cell1_gpu_bootstrap():
     code, _ = _build()
-    assert "def ensure_torch_cuda" in code
+    assert "def get_torch_device" in code
     assert "GLOBAL_FOLDS = 5 if SMOKE else 10" in code
     assert "pipeline_out_smoke" in code
 
@@ -85,7 +87,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `python tests/test_pipeline_nb.py`
-Expected: `FAIL test_cell1_gpu_bootstrap -> 'def ensure_torch_cuda' not in code` (assertion error).
+Expected: `FAIL test_cell1_gpu_bootstrap -> 'def get_torch_device' not in code` (assertion error).
 
 - [ ] **Step 3: Implement the new cell 1**
 
@@ -111,41 +113,6 @@ import seaborn as sns
 warnings.filterwarnings("ignore")
 np.random.seed(42); random.seed(42)
 import torch
-
-def ensure_torch_cuda():
-    \"\"\"Best-effort repair of a broken torch/CUDA pairing; always falls back to CPU.\"\"\"
-    import torch as _t0
-    if not _t0.cuda.is_available():
-        return _t0
-    try:
-        _x = _t0.zeros(1, device="cuda"); _x = _x + 1
-        _t0.cuda.synchronize(); del _x
-        return _t0
-    except Exception as _e:
-        print("CUDA probe failed:", str(_e)[:120], "-> attempting torch cu121 repair")
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-q",
-                               "--index-url", "https://download.pytorch.org/whl/cu121",
-                               "torch==2.2.2"])
-    except Exception as _e:
-        print("torch repair install failed:", str(_e)[:120])
-    for _m in list(sys.modules):
-        if _m == "torch" or _m.startswith("torch."):
-            del sys.modules[_m]
-    import torch
-    if torch.cuda.is_available():
-        try:
-            _x = torch.zeros(1, device="cuda"); _x = _x + 1
-            torch.cuda.synchronize(); del _x
-            print("torch repaired -> CUDA OK:", torch.__version__)
-            return torch
-        except Exception as _e:
-            print("CUDA still failing after repair -> CPU:", str(_e)[:120])
-    else:
-        print("no CUDA after repair -> CPU")
-    return torch
-
-torch = ensure_torch_cuda()
 
 def get_torch_device():
     if torch.cuda.is_available():
