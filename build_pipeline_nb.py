@@ -659,6 +659,71 @@ for name in ("lgb", "cat", "xgb", "hgb"):
     save_oof_artifact(name, model_oof[name], model_te[name])
 pd.DataFrame(LEADERBOARD).round(4).to_csv(os.path.join(WORK, "leaderboard_gbm.csv"))""")
 
+M("""## v7 experiment — retrieval ablation (BASE / FULL / RETR-only)
+
+Three arms per target, identical folds and LGB hyperparameters:
+- **BASE** = v6 feature columns (no retrieval)
+- **FULL** = BASE + retrieval (submitted config)
+- **RETR-only** = retrieval columns alone
+
+Primary diagnostic = per-target OOF RMSE per arm (`ablation_lgb.csv`). Secondary: LGB gain
+importance split into retrieval vs non-retrieval share, and a density-split comparison
+(FULL − BASE OOF gain by `g_density_90` quartile).""")
+
+P("""BASE_COLS = [c for c in Xtr.columns if c not in set(RETR_ALL_COLS)]
+ARMS = [("base", BASE_COLS), ("full", list(Xtr.columns)), ("retr", RETR_ALL_COLS)]
+
+oof_preds = {}
+ablation_rows = []
+print("Ablation (LGB, identical folds, per target):")
+for tt in TARGETS:
+    m, idx, splits = get_splits(tt)
+    y = Y[m]
+    for arm, cols in ARMS:
+        oof = np.full(len(dedup), np.nan)
+        for tr, va in splits:
+            mdl = make_lgb()
+            mdl.fit(Xtr.iloc[tr][cols], Y[tr])
+            oof[va] = mdl.predict(Xtr.iloc[va][cols])
+        oof_preds[(tt, arm)] = oof
+        r = rmse_metric(y, oof[m])
+        ablation_rows.append({"target": tt, "arm": arm, "rmse": r})
+        print(f"  {tt} {arm}: RMSE={r:.4f}")
+ablation_lgb = pd.DataFrame(ablation_rows)
+
+_dens = Xtr["g_density_90"].values
+_qs = np.nanquantile(_dens, [0.0, 0.25, 0.5, 0.75, 1.0])
+_bin = np.clip(np.digitize(_dens, _qs[1:-1]), 0, 3)
+_drows = []
+for tt in TARGETS:
+    m = (dedup["target_type"] == tt).values
+    for b in range(4):
+        sel = m & (_bin == b)
+        if sel.sum() < 20:
+            continue
+        r_base = rmse_metric(Y[sel], oof_preds[(tt, "base")][sel])
+        r_full = rmse_metric(Y[sel], oof_preds[(tt, "full")][sel])
+        _drows.append({"target": tt, "density_bucket": int(b), "n": int(sel.sum()),
+                       "base_rmse": r_base, "full_rmse": r_full, "delta": r_full - r_base})
+ablation_density = pd.DataFrame(_drows)
+
+importance_full = {}
+_grows = []
+for tt in TARGETS:
+    m_tr = (dedup["target_type"] == tt).values
+    mdl = make_lgb(); mdl.fit(Xtr.loc[m_tr], Y[m_tr])
+    imp = pd.Series(mdl.booster_.feature_importance(importance_type="gain"), index=Xtr.columns)
+    importance_full[tt] = imp
+    tot = imp.sum()
+    _grows.append({"target": tt,
+                   "retrieval_gain_share": float(imp[RETR_ALL_COLS].sum() / tot) if tot > 0 else 0.0})
+
+ablation_lgb = ablation_lgb.merge(pd.DataFrame(_grows), on="target", how="left")
+ablation_lgb.to_csv(os.path.join(WORK, "ablation_lgb.csv"), index=False)
+ablation_density.to_csv(os.path.join(WORK, "ablation_density.csv"), index=False)
+print("saved ablation_lgb.csv, ablation_density.csv")
+print(ablation_lgb.pivot(index="target", columns="arm", values="rmse").round(4).to_string())""")
+
 M("""## Layer 5 — Electronic Foundation Network (EFN)
 
 Shared encoder `1153 -> 512 -> 256 -> 128` (BN + SiLU + Dropout 0.3) produces a polymer-state

@@ -158,6 +158,15 @@ def test_pool_c_gets_2d_sim10():
     assert "build_pool_c(sim10, idx10, target_vals)" in code
     assert "build_pool_c(g[\"g_top10_sim\"]" not in code
 
+def test_ablation_cell():
+    code, _ = _build()
+    assert "ablation_lgb.csv" in code
+    assert "ablation_density.csv" in code
+    assert "retrieval_gain_share" in code
+    assert '("base", BASE_COLS), ("full", list(Xtr.columns)), ("retr", RETR_ALL_COLS)' in code
+    assert "importance_full" in code
+    assert "rmse_metric(Y[sel]" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
