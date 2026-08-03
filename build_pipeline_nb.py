@@ -406,13 +406,86 @@ S_tr = (1.0 - cdist(retr_tr, retr_tr, metric="jaccard")).astype(np.float32)
 S_te = (1.0 - cdist(retr_te, retr_tr, metric="jaccard")).astype(np.float32)
 print(f"global sim matrices {S_tr.shape} {S_te.shape} float32 in {time.time()-t0:.0f}s")""")
 
+P("""TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]
+target_vals = np.full((len(dedup), len(TARGETS)), np.nan, dtype=np.float32)
+for j, t in enumerate(TARGETS):
+    mm = (dedup["target_type"] == t).values
+    target_vals[mm, j] = dedup.loc[mm, "target"].values
+
+RETR_COLS_A = ["g_top1_sim","g_top3_sim","g_top5_sim","g_top10_sim",
+               "g_top5_mean","g_top10_mean","g_gap","g_std",
+               "g_density_95","g_density_90","g_density_85","g_exact_twin"]
+RETR_COLS_B = ["st_top1_sim","st_top3_sim","st_top5_sim",
+               "st_density_95","st_density_90","st_density_85",
+               "st_tgt_mean","st_tgt_median","st_tgt_std","st_tgt_wmean_sq"]
+RETR_COLS_C = [f"ct_{t}_{s}" for t in TARGETS for s in ("mean","median","std","wmean_sq","count")]
+RETR_ALL_COLS = RETR_COLS_A + RETR_COLS_B + RETR_COLS_C
+assert len(RETR_COLS_A) + len(RETR_COLS_B) + len(RETR_COLS_C) == 57, "retrieval grid must be 57 cols"
+
+def build_pool_a(S_m):
+    sim10, idx10 = topk_from_sim(S_m, 10)
+    sim5 = sim10[:, :5]
+    dens = density_cols(S_m)
+    return {
+        "g_top1_sim": sim10[:, 0], "g_top3_sim": sim10[:, 2], "g_top5_sim": sim10[:, 4],
+        "g_top10_sim": sim10[:, 9],
+        "g_top5_mean": sim5.mean(axis=1), "g_top10_mean": sim10.mean(axis=1),
+        "g_gap": sim10[:, 0] - sim10[:, 1],
+        "g_std": sim5.std(axis=1),
+        "g_density_95": dens[0], "g_density_90": dens[1], "g_density_85": dens[2],
+        "g_exact_twin": (sim10[:, 0] >= 0.999).astype(np.float32),
+    }, idx10
+
+def build_pool_b(S_m, q_tt, cand_tt, cand_tgt):
+    out = {}
+    for tt in TARGETS:
+        rows = np.where(q_tt == tt)[0]
+        if len(rows) == 0:
+            continue
+        Sb = S_m[rows][:, cand_tt == tt]
+        sim10, idx10 = topk_from_sim(Sb, 10)
+        valid = sim10 >= -0.5
+        nb = np.where(valid, cand_tgt[cand_tt == tt][idx10], np.nan)
+        sim5 = sim10[:, :5]
+        dens = density_cols(Sb)
+        d = {
+            "st_top1_sim": sim10[:, 0], "st_top3_sim": sim10[:, 2], "st_top5_sim": sim10[:, 4],
+            "st_density_95": dens[0], "st_density_90": dens[1], "st_density_85": dens[2],
+            "st_tgt_mean": np.nanmean(nb, axis=1),
+            "st_tgt_median": np.nanmedian(nb, axis=1),
+            "st_tgt_std": np.nanstd(nb, axis=1),
+            "st_tgt_wmean_sq": wmean_sq(sim10, nb),
+        }
+        for c, v in d.items():
+            out[c] = np.zeros(S_m.shape[0], dtype=np.float32)
+            out[c][rows] = np.nan_to_num(v, nan=0.0).astype(np.float32)
+    return out
+
+def build_pool_c(sim10, idx10, target_vals):
+    nb = target_vals[idx10]
+    valid = (sim10 >= -0.5)[:, :, None]
+    nb = np.where(valid, nb, np.nan)
+    cnt = np.sum(~np.isnan(nb), axis=1)
+    w = np.maximum(sim10, 0.0) ** 2
+    wb = np.where(valid, w[:, :, None], 0.0)
+    num = np.nansum(wb * np.nan_to_num(nb, nan=0.0), axis=1)
+    den = np.nansum(wb, axis=1); den[den == 0] = 1.0
+    wmean = num / den
+    out = {}
+    for j, t in enumerate(TARGETS):
+        out[f"ct_{t}_mean"] = np.nan_to_num(np.nanmean(nb[:, :, j], axis=1)).astype(np.float32)
+        out[f"ct_{t}_median"] = np.nan_to_num(np.nanmedian(nb[:, :, j], axis=1)).astype(np.float32)
+        out[f"ct_{t}_std"] = np.nan_to_num(np.nanstd(nb[:, :, j], axis=1)).astype(np.float32)
+        out[f"ct_{t}_wmean_sq"] = wmean[:, j].astype(np.float32)
+        out[f"ct_{t}_count"] = cnt[:, j].astype(np.float32)
+    return out""")
+
 M("""## Validation harness — GroupKFold per target, OOF scoring (RMSE)
 
 Each target is validated with its own fold split. We store OOF predictions of every base model
 for Layer 7 stacking, and we log **per-target RMSE** just like the leaderboard.""")
 P("""from sklearn.metrics import root_mean_squared_error as rmse_metric
 
-TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]
 Y = dedup["target"].values
 GROUP_TYPES = ["tg","egc","electronic"]  # tg / egc / {egb,eps,nc,ei,eea}
 TGT_GROUP = {t: ("tg" if t=="tg" else "egc" if t=="egc" else "electronic") for t in TARGETS}

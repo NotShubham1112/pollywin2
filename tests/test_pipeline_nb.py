@@ -129,6 +129,16 @@ def test_layer3_global_sim():
     assert "K_RETR" in code
     assert "def wmean_sq" in code
 
+def test_layer3_pool_column_grid():
+    code, _ = _build()
+    assert "RETR_COLS_A" in code and "RETR_COLS_B" in code and "RETR_COLS_C" in code
+    assert "assert len(RETR_COLS_A) + len(RETR_COLS_B) + len(RETR_COLS_C) == 57" in code
+    assert '"g_exact_twin"' in code
+    assert '"st_tgt_wmean_sq"' in code
+    assert '"ct_{t}_count"' in code
+    assert '"ct_{t}_wmean_sq"' in code
+    assert 'TARGETS = ["tg","egc","egb","eps","nc","ei","eea"]' in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
