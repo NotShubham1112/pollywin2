@@ -246,6 +246,19 @@ def test_figures_21_23():
     assert "ablation_pseudo.set_index(\"target\").reindex(TARGETS)" in code
     assert "if pseudo_conf is not None:" in code
 
+def test_all_cells_compile():
+    """Every code cell must be valid Python (regression: fig-20 annotate had a
+    raw newline inside a string literal, a SyntaxError that only nbconvert hit)."""
+    import ast
+    subprocess.run([sys.executable, str(GEN)], cwd=str(REPO), check=True,
+                   capture_output=True, text=True)
+    nb = nbformat.read(str(NB), as_version=4)
+    for i, c in enumerate(nb.cells):
+        if c.cell_type == "code":
+            ast.parse(c.source)
+    assert "v7 retrieval failed -\\nnot submitted" in "\n".join(
+        c.source for c in nb.cells if c.cell_type == "code")
+
 if __name__ == "__main__":
     import traceback
     failed = 0

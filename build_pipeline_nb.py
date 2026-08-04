@@ -1433,7 +1433,7 @@ _lb = pd.DataFrame({"version": ["v4", "v5", "v6", "v7"],
                     "lb": [0.828, np.nan, 0.847, np.nan]})
 fig, ax = plt.subplots(figsize=(6, 4))
 ax.plot(_lb["version"], _lb["lb"], marker="o", color="#d1495b")
-ax.annotate("v7 retrieval failed -\nnot submitted", xy=(3, 0.82), xytext=(2.3, 0.80),
+ax.annotate("v7 retrieval failed -\\nnot submitted", xy=(3, 0.82), xytext=(2.3, 0.80),
             arrowprops=dict(arrowstyle="->", color="#555555"), fontsize=8, ha="center")
 ax.set_ylabel("public LB"); ax.set_title("Leaderboard progression"); ax.grid(alpha=0.3)
 savefig(fig, "20_lb_progression.png")""")
