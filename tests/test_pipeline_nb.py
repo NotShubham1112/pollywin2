@@ -239,6 +239,13 @@ def test_v8_augmented_stack():
     assert "test_store.update(aug_te)" in code
     assert "save_oof_artifact(name," in code
 
+def test_figures_21_23():
+    code, _ = _build()
+    for n in ["21_pseudo_ablation.png", "22_pseudo_conf_dist.png", "23_pseudo_rows_per_target.png"]:
+        assert n in code
+    assert "ablation_pseudo.set_index(\"target\").reindex(TARGETS)" in code
+    assert "if pseudo_conf is not None:" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

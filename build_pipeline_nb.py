@@ -1438,6 +1438,35 @@ ax.annotate("v7 retrieval failed -\nnot submitted", xy=(3, 0.82), xytext=(2.3, 0
 ax.set_ylabel("public LB"); ax.set_title("Leaderboard progression"); ax.grid(alpha=0.3)
 savefig(fig, "20_lb_progression.png")""")
 
+P("""# ================= v8 pseudo-labelling diagnostics =================
+if pseudo_conf is not None:
+    _piv = ablation_pseudo.set_index("target").reindex(TARGETS)
+    fig, ax = plt.subplots(figsize=(11, 5))
+    x = np.arange(len(TARGETS)); w = 0.35
+    ax.bar(x - w / 2, _piv["base_rmse"].values, w, label="BASE", color="#999999")
+    ax.bar(x + w / 2, _piv["pseudo_rmse"].values, w, label="PSEUDO", color="#2a6fb0")
+    ax.set_xticks(x); ax.set_xticklabels(TARGETS)
+    ax.set_ylabel("OOF RMSE (LGB)"); ax.set_title("Pseudo-labelling ablation per target (lower = better)")
+    ax.legend(); savefig(fig, "21_pseudo_ablation.png")
+
+    fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+    for ax, tt in zip(axes.ravel()[:7], TARGETS):
+        std_all, sel = pseudo_conf[tt]
+        ax.hist(std_all[~sel], bins=40, alpha=0.5, density=True, color="#d1495b", label="rejected")
+        ax.hist(std_all[sel], bins=40, alpha=0.7, density=True, color="#2a6fb0", label="selected")
+        ax.set_title(tt); ax.set_xlabel("inter-model std"); ax.set_ylabel("density")
+    axes.ravel()[7].axis("off")
+    fig.legend(loc="upper right", ncol=2)
+    savefig(fig, "22_pseudo_conf_dist.png")
+
+    fig, ax = plt.subplots(figsize=(9, 4))
+    x = np.arange(len(TARGETS)); w = 0.35
+    ax.bar(x - w / 2, _piv["real_count"].values, w, label="real", color="#999999")
+    ax.bar(x + w / 2, _piv["pseudo_count"].values, w, label="pseudo", color="#f0a202")
+    ax.set_xticks(x); ax.set_xticklabels(TARGETS)
+    ax.set_ylabel("rows"); ax.set_title("Pseudo rows per target vs real rows (cap = 2x real)")
+    ax.legend(); savefig(fig, "23_pseudo_rows_per_target.png")""")
+
 M("""## Submission — `submission.csv`
 
 Final test predictions = **stacked ensemble**, with per-target physics bounds:
