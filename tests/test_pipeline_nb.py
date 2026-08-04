@@ -246,6 +246,14 @@ def test_figures_21_23():
     assert "ablation_pseudo.set_index(\"target\").reindex(TARGETS)" in code
     assert "if pseudo_conf is not None:" in code
 
+def test_v8_clip_axis():
+    """pandas DataFrame.clip with a Series lower/upper requires axis=1
+    (per-column alignment); without it the pseudo path raises
+    ValueError: Must specify axis=0 or 1 (caught by pseudo smoke)."""
+    code, _ = _build()
+    assert "Xpi.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)" in code
+    assert "Xps_all.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)" in code
+
 def test_all_cells_compile():
     """Every code cell must be valid Python (regression: fig-20 annotate had a
     raw newline inside a string literal, a SyntaxError that only nbconvert hit)."""

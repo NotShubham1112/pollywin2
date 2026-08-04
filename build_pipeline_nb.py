@@ -952,7 +952,7 @@ P("""def make_pseudo_rows(frac=PSEUDO_FRAC):
     pi = pi[pi["canon"].notna() & (pi["canon"].str.len() > 0)]
     Xpi, ok_pi = build_features(pi["SMILES"].tolist())
     Xpi = Xpi.reindex(columns=MODEL_COLS).fillna(0.0)
-    Xpi = Xpi.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max())
+    Xpi = Xpi.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)
     pi = pi[ok_pi]; Xpi = Xpi[ok_pi]
     pseudo_parts = []; conf_map = {}
     print("Scoring PI1M sample (cross-family disagreement)...")
@@ -991,7 +991,7 @@ else:
 if pseudo is not None:
     Xps_all, ok_ps = build_features(pseudo["smiles"].tolist())
     Xps_all = Xps_all.reindex(columns=MODEL_COLS).fillna(0.0)
-    Xps_all = Xps_all.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max())
+    Xps_all = Xps_all.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)
 
     def augmented_fit_predict(tt, make_model, Xtr_full, Xte_full, Xps, Yps):
         m, idx, splits = get_splits(tt)
