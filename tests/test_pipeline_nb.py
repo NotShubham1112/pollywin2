@@ -188,6 +188,20 @@ def test_figures_15_20():
         assert n in code
     assert 'pivot(index="target", columns="arm", values="rmse").reindex(TARGETS)' in code
 
+def test_v8_base_config_model_cols():
+    code, _ = _build()
+    assert "MODEL_COLS = [c for c in Xtr.columns if c not in set(RETR_ALL_COLS)]" in code
+    assert "gbm_fit_predict(tt, mk, Xtr[MODEL_COLS], Xte[MODEL_COLS])" in code
+    assert "mdl.fit(Xtr.loc[m_tr, MODEL_COLS], Y[m_tr])" in code
+
+def test_v8_pseudo_flags():
+    code, _ = _build()
+    assert "USE_PSEUDO = True if not SMOKE" in code
+    assert 'os.environ.get("POLYWIN_PSEUDO", "0") == "1"' in code
+    assert "PSEUDO_SAMPLE = 200000" in code
+    assert "PSEUDO_FRAC = 0.05" in code
+    assert "PSEUDO_CAP_MULT = 2.0" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

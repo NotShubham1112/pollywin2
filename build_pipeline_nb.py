@@ -24,10 +24,11 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 5. **Electronic Foundation Network** — archived behind `RUN_NNS` (default OFF; not executed in v7)
 6. **Tg isolation** — dedicated single-target Tg NN, archived behind `RUN_NNS` (default OFF)
 7. **Stacking** — Ridge level-1.5 + level-2 meta (reliability + cross-target features) on OOF predictions
-8. **PI1M pseudo-labelling** — deferred to v8 (code present, `USE_PSEUDO=False`)
+8. **PI1M pseudo-labelling** — confidence-filtered (cross-model disagreement), capped 2x integration, full stack retrained on augmented rows (v8)
 9. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
 
 **v7 experiment:** three-arm ablation (BASE / FULL / RETR-only) per target with LGB. **Result: FAILED honest OOF** — FULL (with retrieval columns) is worse than BASE on all 7 targets; the v7 FULL config was **not submitted**. Standing LB remains v6 = 0.847. v8 pivots to PI1M pseudo-labelling.
+**v8 experiment:** two-arm ablation per target with LGB (BASE = v6 feature cols vs PSEUDO = BASE + PI1M pseudo rows); submitted config = BASE cols + pseudo rows (4 GBMs + L1.5 Ridge + L2 meta).
 
 ## Rule compliance notes
 - **No hand-labelling of test data.** All retrieval features use **train labels only**.
@@ -80,6 +81,10 @@ GLOBAL_FOLDS = 5 if SMOKE else 10
 EFN_EPOCHS = 15 if SMOKE else 40
 TGNN_EPOCHS = 15 if SMOKE else 40
 RUN_NNS = False   # v7: EFN/TgNN code archived in notebook, not executed. Flip True to re-enable.
+USE_PSEUDO = True if not SMOKE else os.environ.get("POLYWIN_PSEUDO", "0") == "1"   # v8: pseudo-labelling on for full runs; smoke runs skip unless POLYWIN_PSEUDO=1
+PSEUDO_SAMPLE = 200000
+PSEUDO_FRAC = 0.05
+PSEUDO_CAP_MULT = 2.0
 print("ON_KAGGLE =", ON_KAGGLE)
 print("WORK =", WORK)
 print("SMOKE =", SMOKE, "| GLOBAL_FOLDS =", GLOBAL_FOLDS)
@@ -639,6 +644,9 @@ def make_hgb():
                                          l2_regularization=1.0)
 
 LEADERBOARD = {}
+MODEL_COLS = [c for c in Xtr.columns if c not in set(RETR_ALL_COLS)]
+assert len(MODEL_COLS) == len(Xtr.columns) - len(RETR_ALL_COLS), "MODEL_COLS must be v6 feature cols"
+print("v8 BASE config: excluding", len(RETR_ALL_COLS), "retrieval cols ->", len(MODEL_COLS), "model cols")
 model_oof = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
 model_te = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
 print("Training GBM experts...")
@@ -647,7 +655,7 @@ for tt in TARGETS:
     leader = {}
     for name, mk in [("lgb", make_lgb), ("cat", make_cat), ("xgb", make_xgb), ("hgb", make_hgb)]:
         t0 = time.time()
-        oof, tep = gbm_fit_predict(tt, mk, Xtr, Xte)
+        oof, tep = gbm_fit_predict(tt, mk, Xtr[MODEL_COLS], Xte[MODEL_COLS])
         r = record(name + "_" + tt, tt, oof, tep)
         leader[name] = r
         model_oof[name][tt] = oof; model_te[name][tt] = tep
@@ -1233,8 +1241,8 @@ axes.ravel()[7].axis("off"); savefig(fig, "06_residuals.png")
 # ---- Fig 7: feature importance (lgb_tg) ----
 if ("lgb_tg" in oof_store):
     mdl = make_lgb(); m_tr = (dedup["target_type"] == "tg").values
-    mdl.fit(Xtr.loc[m_tr], Y[m_tr])
-    imp = pd.Series(mdl.feature_importances_, index=Xtr.columns).sort_values(ascending=False).head(20)
+    mdl.fit(Xtr.loc[m_tr, MODEL_COLS], Y[m_tr])
+    imp = pd.Series(mdl.feature_importances_, index=MODEL_COLS).sort_values(ascending=False).head(20)
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.barh(imp.index[::-1], imp.values[::-1], color="#2a6fb0")
     ax.set_title("Top-20 feature importances (LightGBM, Tg)")
