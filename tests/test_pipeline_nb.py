@@ -219,6 +219,26 @@ def test_v8_no_seed_disagreement():
     assert "Xtr.iloc[[0]]" not in code
     assert "Pseudo retrain placeholder" not in code
 
+def test_v8_ablation_pseudo():
+    code, _ = _build()
+    assert "ablation_pseudo.csv" in code
+    assert 'rmse_metric(Y[m_tt], oof_store[("lgb_" + tt, tt)])' in code
+    assert '"delta": pseudo_r - base_r' in code
+    assert "ablation_pseudo = pd.DataFrame(ablation_pseudo_rows)" in code
+
+def test_v8_rebuild_not_placeholder():
+    code, _ = _build()
+    assert 'Xps_all, ok_ps = build_features(pseudo["smiles"].tolist())' in code
+    assert "Xps_all.reindex(columns=MODEL_COLS).fillna(0.0)" in code
+
+def test_v8_augmented_stack():
+    code, _ = _build()
+    assert "def augmented_fit_predict" in code
+    assert "pd.concat([Xtr_full.iloc[tr], Xps], ignore_index=True)" in code
+    assert "oof_store.update(aug_oof)" in code
+    assert "test_store.update(aug_te)" in code
+    assert "save_oof_artifact(name," in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

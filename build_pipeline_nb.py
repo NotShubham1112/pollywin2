@@ -985,7 +985,54 @@ if USE_PSEUDO and pi1m_path and os.path.exists(pi1m_path):
     print(f"pseudo rows: {len(pseudo)} ({time.time()-t0:.0f}s)")
     print(pseudo.groupby("target_type").size().to_string())
 else:
-    print("Pseudo-labelling skipped (USE_PSEUDO=False or PI1M unavailable).")""")
+    print("Pseudo-labelling skipped (USE_PSEUDO=False or PI1M unavailable).")
+
+# ---- v8 experiment + stack rebuild on (real + pseudo) rows ----
+if pseudo is not None:
+    Xps_all, ok_ps = build_features(pseudo["smiles"].tolist())
+    Xps_all = Xps_all.reindex(columns=MODEL_COLS).fillna(0.0)
+    Xps_all = Xps_all.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max())
+
+    def augmented_fit_predict(tt, make_model, Xtr_full, Xte_full, Xps, Yps):
+        m, idx, splits = get_splits(tt)
+        oof = np.zeros(m.sum()); te_pred = np.zeros(len(Xte_full))
+        feats = list(Xtr_full.columns)
+        for tr, va in splits:
+            Xa = pd.concat([Xtr_full.iloc[tr], Xps], ignore_index=True)
+            ya = np.concatenate([Y[tr], Yps])
+            mdl = make_model(); mdl.fit(Xa[feats], ya)
+            oof[np.where(m)[0].searchsorted(va)] = mdl.predict(Xtr_full.iloc[va])
+            te_pred += mdl.predict(Xte_full) / len(splits)
+        return oof, te_pred
+
+    aug_oof = {}; aug_te = {}; ablation_pseudo_rows = []
+    for name, mk in [("lgb", make_lgb), ("cat", make_cat), ("xgb", make_xgb), ("hgb", make_hgb)]:
+        print(f"Refitting {name} on real+pseudo rows...")
+        for tt in TARGETS:
+            ps_mask = (pseudo["target_type"] == tt).values
+            oof_a, te_a = augmented_fit_predict(tt, mk, Xtr[MODEL_COLS], Xte[MODEL_COLS],
+                                                Xps_all.loc[ps_mask], pseudo.loc[ps_mask, "target"].values)
+            key = (name + "_" + tt, tt)
+            aug_oof[key] = oof_a; aug_te[key] = te_a
+            if name == "lgb":
+                m_tt = (dedup["target_type"] == tt).values
+                base_r = rmse_metric(Y[m_tt], oof_store[("lgb_" + tt, tt)])
+                pseudo_r = rmse_metric(Y[m_tt], oof_a)
+                ablation_pseudo_rows.append({"target": tt, "real_count": int(m_tt.sum()),
+                                             "pseudo_count": int(ps_mask.sum()),
+                                             "base_rmse": base_r, "pseudo_rmse": pseudo_r,
+                                             "delta": pseudo_r - base_r})
+                print(f"  lgb {tt}: BASE={base_r:.4f} PSEUDO={pseudo_r:.4f} delta={pseudo_r - base_r:+.4f}")
+    ablation_pseudo = pd.DataFrame(ablation_pseudo_rows)
+    ablation_pseudo.to_csv(os.path.join(WORK, "ablation_pseudo.csv"), index=False)
+    print("saved ablation_pseudo.csv")
+    print(ablation_pseudo.set_index("target").round(4).to_string())
+
+    oof_store.update(aug_oof); test_store.update(aug_te)
+    for name in ("lgb", "cat", "xgb", "hgb"):
+        save_oof_artifact(name, {tt: aug_oof[(name + "_" + tt, tt)] for tt in TARGETS},
+                          {tt: aug_te[(name + "_" + tt, tt)] for tt in TARGETS})
+    print("Stack rebuilt on augmented rows: oof_store/test_store overwritten, oof_*.parquet re-saved.")""")
 
 M("""## Layer 9 — Stacking (level-1.5 Ridge + level-2 meta with reliability + cross-target features)
 
