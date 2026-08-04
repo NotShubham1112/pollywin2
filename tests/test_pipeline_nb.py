@@ -202,6 +202,23 @@ def test_v8_pseudo_flags():
     assert "PSEUDO_FRAC = 0.05" in code
     assert "PSEUDO_CAP_MULT = 2.0" in code
 
+def test_v8_selection_cross_family():
+    code, _ = _build()
+    assert 'pi.sample(n=PSEUDO_SAMPLE, random_state=42)' in code
+    assert "for mk in (make_lgb, make_cat, make_xgb):" in code
+    assert "np.std(preds, axis=0)" in code
+    assert "np.percentile(std, (1 - frac) * 100)" in code
+    assert "np.argsort(std[sel])[:cap]" in code
+    assert "round(PSEUDO_CAP_MULT * float(m_tr.sum()))" in code
+    assert "Xpi.reindex(columns=MODEL_COLS).fillna(0.0)" in code
+    assert "pseudo_labels.csv" in code
+
+def test_v8_no_seed_disagreement():
+    code, _ = _build()
+    assert "[42, 2024, 7]" not in code
+    assert "Xtr.iloc[[0]]" not in code
+    assert "Pseudo retrain placeholder" not in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

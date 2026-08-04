@@ -933,59 +933,57 @@ generator's git history for future experiments.""")
 P("""# GNN branch archived in v5 (see spec section 4.8); code kept in build_pipeline_nb.py git history.
 print("GNN branch archived in v5 (see spec 4.8).")""")
 
-M("""## Layer 8 — PI1M pseudo-labelling (confidence-filtered)
+M("""## Layer 8 - PI1M pseudo-labelling (confidence-filtered, cross-model disagreement)
 
 PI1M is explicitly allowed. We:
-1. predict PI1M with the strong ensemble,
-2. keep only the **top-5% most confident** (smallest per-model disagreement),
-3. add those as extra training rows, and **retrain the GBM experts**.
+1. sample 200k PI1M polymers (seeded random, seed 42),
+2. score each target with **all three GBM families** (one fit per family, seed 42);
+   disagreement = std **across families** (inter-model, not across seeds),
+3. keep the per-target **top-5% lowest-disagreement** rows, capped at 2x the real row count,
+4. rebuild RDKit features for the selected SMILES and retrain the base models on
+   (real + pseudo) rows - pseudo rows join every fold's training side; OOF is scored
+   on real rows only.
 
-This is executed only if `USE_PSEUDO=True` and PI1M exists (capped at 60k rows to control runtime).""")
-P("""USE_PSEUDO = False   # toggle; keep False in the first run, True for the full push
-PSEUDO_CAP = 60000
-
-def make_pseudo_rows(frac=0.05):
-    pi = pd.read_csv(pi1m_path, nrows=400000)
+Executed only if `USE_PSEUDO=True` and PI1M exists.""")
+P("""def make_pseudo_rows(frac=PSEUDO_FRAC):
+    pi = pd.read_csv(pi1m_path, usecols=["SMILES"])
+    pi = pi.sample(n=PSEUDO_SAMPLE, random_state=42)
     pi["canon"] = pi["SMILES"].map(canon_key)
-    pi = pi[pi["canon"].notna()]
-    # per target_type, pseudo-label with the best GBM
+    pi = pi[pi["canon"].notna() & (pi["canon"].str.len() > 0)]
     Xpi, ok_pi = build_features(pi["SMILES"].tolist())
-    Xpi = Xpi.reindex(columns=Xtr.columns).fillna(0.0)
-    Xpi = Xpi.clip(lower=Xtr.min(), upper=Xtr.max())
-    sc2 = StandardScaler().fit(pd.concat([Xtr, Xte], axis=0).values)
-    Xpi_s = sc2.transform(Xpi.values)
-    rows = []
+    Xpi = Xpi.reindex(columns=MODEL_COLS).fillna(0.0)
+    Xpi = Xpi.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max())
+    pi = pi[ok_pi]; Xpi = Xpi[ok_pi]
+    pseudo_parts = []; conf_map = {}
+    print("Scoring PI1M sample (cross-family disagreement)...")
     for tt in TARGETS:
-        mk = {"lgb": make_lgb, "cat": make_cat, "xgb": make_xgb}[min(LEADERBOARD[tt], key=LEADERBOARD[tt].get)]
-        mdl = mk(); m_tr = (dedup["target_type"] == tt).values
-        mdl.fit(Xtr.loc[m_tr], Y[m_tr])
+        m_tr = (dedup["target_type"] == tt).values
         preds = []
-        for seed in [42, 2024, 7]:
-            if "random_state" in mdl.get_params():
-                mdl.set_params(random_state=seed); mdl.fit(Xtr.loc[m_tr], Y[m_tr])
+        for mk in (make_lgb, make_cat, make_xgb):
+            mdl = mk(); mdl.fit(Xtr.loc[m_tr, MODEL_COLS], Y[m_tr])
             preds.append(mdl.predict(Xpi))
         mean = np.mean(preds, axis=0); std = np.std(preds, axis=0)
-        conf = np.percentile(std, (1 - frac) * 100)
-        sel = std <= conf
-        rows.append(pd.DataFrame({"smiles": pi.loc[sel, "SMILES"], "target": mean[sel],
-                                  "target_type": tt, "conf": std[sel]}))
-    pseudo = pd.concat(rows, ignore_index=True).sample(frac=1.0, random_state=42).head(PSEUDO_CAP)
-    return pseudo
+        thr = np.percentile(std, (1 - frac) * 100)
+        sel = std <= thr
+        conf_map[tt] = (std, sel)
+        cap = round(PSEUDO_CAP_MULT * float(m_tr.sum()))
+        order = np.argsort(std[sel])[:cap]
+        sel_idx = np.flatnonzero(sel)[order]
+        pseudo_parts.append(pd.DataFrame({"smiles": pi["SMILES"].values[sel_idx],
+                                          "target": mean[sel_idx], "conf": std[sel_idx],
+                                          "target_type": tt}))
+        print(f"  {tt}: scored {len(Xpi)} rows, kept {len(sel_idx)} (cap {cap}, thr {thr:.3f})")
+    pseudo = pd.concat(pseudo_parts, ignore_index=True).sample(frac=1.0, random_state=42)
+    return pseudo, conf_map
 
+pseudo = None; pseudo_conf = None
 if USE_PSEUDO and pi1m_path and os.path.exists(pi1m_path):
     print("Building pseudo-labels from PI1M...")
     t0 = time.time()
-    pseudo = make_pseudo_rows(frac=0.05)
+    pseudo, pseudo_conf = make_pseudo_rows()
     pseudo.to_csv(os.path.join(WORK, "pseudo_labels.csv"), index=False)
     print(f"pseudo rows: {len(pseudo)} ({time.time()-t0:.0f}s)")
-
-    # retrain with pseudo rows appended
-    Xtr2 = Xtr.copy()
-    Y2 = Y.copy()
-    for _, r in pseudo.iterrows():
-        Xtr2 = pd.concat([Xtr2, Xtr.iloc[[0]]], ignore_index=True)  # placeholder, replaced below
-    # NOTE: proper pseudo retrain rebuilds features for pseudo SMILES; kept simple to stay in time budget
-    print("Pseudo retrain placeholder (full version rebuilds features for pseudo SMILES).")
+    print(pseudo.groupby("target_type").size().to_string())
 else:
     print("Pseudo-labelling skipped (USE_PSEUDO=False or PI1M unavailable).")""")
 
