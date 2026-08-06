@@ -897,7 +897,7 @@ def run_bucket_moe(tt, K, splits):
         if r > _br:
             _br, w_fallback = r, w
 
-    _, labs, labs_te, idx = cluster_assignment(tt, K)
+    km, labs, labs_te, idx = cluster_assignment(tt, K)
     pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
     fold_w = np.zeros((len(splits), K)); fold_n = np.zeros((len(splits), K))
     blend_oof = np.full(m.sum(), np.nan)

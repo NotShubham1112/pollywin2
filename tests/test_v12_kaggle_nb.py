@@ -97,6 +97,7 @@ def test_v12_bucket_moe():
     assert "KMeans(n_clusters=K, random_state=42, n_init=10)" in code
     assert "def cluster_assignment(tt, K):" in code
     assert "def run_bucket_moe(tt, K, splits):" in code
+    assert "km, labs, labs_te, idx = cluster_assignment(tt, K)" in code
     assert "km.predict(Zte)" in code
     assert "v12_bucket_compare.csv" in code and "v12_bucket_diag.csv" in code
     assert '"K": best_K' in code
