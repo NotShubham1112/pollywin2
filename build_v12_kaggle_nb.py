@@ -285,6 +285,104 @@ dedup.to_pickle(os.path.join(WORK, "dedup.pkl"))
 test.to_pickle(os.path.join(WORK, "test.pkl"))
 """)
 
+# =====================================================================
+M("## 3. Validation harness (GroupKFold per target, OOF RMSE) + Layer 4 GBM experts")
+
+# =====================================================================
+P("""Y = dedup["target"].values
+oof_store = {}      # (model, target) -> oof preds
+test_store = {}     # (model, target) -> test preds
+
+def get_splits(tt):
+    m = (dedup["target_type"] == tt).values
+    idx = np.where(m)[0]
+    splits = []
+    for f in range(folds.max() + 1):
+        fold_mask = (folds[m] == f)
+        va = idx[fold_mask]
+        tr = idx[~fold_mask]
+        if len(va) > 0 and len(tr) > 0:
+            splits.append((tr, va))
+    return m, idx, splits
+
+def record(name, tt, oof, te_pred):
+    oof_store[(name, tt)] = oof
+    test_store[(name, tt)] = te_pred
+    return rmse_metric(Y[dedup["target_type"].values == tt], oof)
+
+MODEL_COLS = list(Xtr.columns)
+print("v12 stack uses all feature cols:", len(MODEL_COLS))
+""")
+
+P("""import lightgbm as lgbm
+import xgboost as xgbm
+from catboost import CatBoostRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+def gbm_fit_predict(tt, make_model, Xtr_full, Xte_full, use_folds=True):
+    m, idx, splits = get_splits(tt)
+    oof = np.zeros(m.sum())
+    te_pred = np.zeros(len(Xte_full))
+    feats = list(Xtr_full.columns)
+    for tr, va in splits:
+        mdl = make_model()
+        mdl.fit(Xtr_full.iloc[tr], Y[tr])
+        oof[np.where(m)[0].searchsorted(va)] = mdl.predict(Xtr_full.iloc[va])
+        te_pred += mdl.predict(Xte_full) / len(splits)
+    return oof, te_pred
+
+def make_lgb():
+    return lgbm.LGBMRegressor(n_estimators=600, learning_rate=0.03, num_leaves=31,
+                              subsample=0.85, subsample_freq=1, colsample_bytree=0.7,
+                              reg_alpha=0.3, reg_lambda=1.0, min_child_samples=10,
+                              random_state=42, verbose=-1, n_jobs=-1)
+def make_cat():
+    return CatBoostRegressor(iterations=500, learning_rate=0.05, depth=6, l2_leaf_reg=3.0,
+                             random_seed=42, verbose=0, allow_writing_files=False)
+def make_xgb():
+    return xgbm.XGBRegressor(n_estimators=600, learning_rate=0.03, max_depth=6,
+                             subsample=0.85, colsample_bytree=0.7, reg_alpha=0.3,
+                             reg_lambda=1.0, random_state=42, verbosity=0, n_jobs=-1)
+def make_hgb():
+    return HistGradientBoostingRegressor(max_iter=300, learning_rate=0.05, random_state=42,
+                                         l2_regularization=1.0)
+
+GBM_CHK = os.path.join(WORK, "moe_gbm_chk.parquet")
+if ON_KAGGLE:
+    GBM_CACHE_CHK = None
+else:
+    GBM_CACHE_CHK = os.path.join("vault", "pipeline_out", "gnn_arm", "moe_gbm_chk.parquet")
+USE_GBM_CACHE = (not ON_KAGGLE) and SMOKE and os.path.exists(GBM_CACHE_CHK)
+
+LEADERBOARD = {}
+model_oof = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
+model_te = {n: {} for n in ("lgb", "cat", "xgb", "hgb")}
+if USE_GBM_CACHE:
+    chk = pd.read_parquet(GBM_CACHE_CHK)
+    for _, r in chk.iterrows():
+        oof_store[(r["key"], r["target"])] = r["oof"]
+        test_store[(r["key"], r["target"])] = r["test_pred"]
+    print(f"SMOKE: loaded {len(chk)} GBM checkpoints from {GBM_CACHE_CHK}")
+else:
+    print("Training GBM experts (v12 stack)...")
+    for tt in TARGETS:
+        m, idx, splits = get_splits(tt)
+        leader = {}
+        for name, mk in [("lgb", make_lgb), ("cat", make_cat), ("xgb", make_xgb), ("hgb", make_hgb)]:
+            t0 = time.time()
+            oof, tep = gbm_fit_predict(tt, mk, Xtr[MODEL_COLS], Xte[MODEL_COLS])
+            r = record(name + "_" + tt, tt, oof, tep)
+            leader[name] = r
+            model_oof[name][tt] = oof; model_te[name][tt] = tep
+            print(f"  {tt} {name}: RMSE={r:.4f} ({time.time()-t0:.0f}s)")
+        LEADERBOARD[tt] = leader
+    pd.DataFrame(LEADERBOARD).round(4).to_csv(os.path.join(WORK, "leaderboard_gbm.csv"))
+    chk_rows = [pd.DataFrame({"key": k[0], "target": k[1], "oof": [oof_store[k]],
+                              "test_pred": [test_store[k]]}) for k in oof_store]
+    pd.concat(chk_rows, ignore_index=True).to_parquet(GBM_CHK, index=False)
+    print("saved moe_gbm_chk.parquet")
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")

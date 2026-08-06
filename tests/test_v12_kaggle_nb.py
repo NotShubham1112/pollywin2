@@ -48,6 +48,17 @@ def test_v12_feature_factory():
     assert "X_all = X_all.replace([np.inf, -np.inf], np.nan)" in code
     assert '"ring_count","rigidity","flexibility","halogen_density"' in code
 
+def test_v12_harness_and_gbm():
+    code, _ = _build()
+    assert "MODEL_COLS = list(Xtr.columns)" in code
+    assert "def get_splits(tt):" in code
+    assert "def record(name, tt, oof, te_pred):" in code
+    assert "def gbm_fit_predict(tt, make_model, Xtr_full, Xte_full, use_folds=True):" in code
+    assert "def make_lgb():" in code
+    assert "moe_gbm_chk.parquet" in code
+    assert 'oof_store[(r["key"], r["target"])] = r["oof"]' in code
+    assert "SMOKE: loaded" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
