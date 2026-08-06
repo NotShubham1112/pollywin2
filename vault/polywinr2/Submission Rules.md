@@ -41,6 +41,10 @@ The "Final Submission" is the one you select (or Kaggle auto-selects) for final 
 
 See [[Teams and Collaboration Rules#Public Code Sharing]] — no private cross-team sharing; public sharing under OSI-approved license on Kaggle.
 
+## Notebook-Backed Submissions (Round 2)
+
+> ⚠️ Round 2 is **notebook/code-only**. Every submission must be generated inside a Kaggle Notebook; **prediction-only CSV uploads that aren't backed by a compliant notebook are invalidated**. See [[Notebook Submission Requirement]] for the full rule (§6.2.2, §7.1, §7.2) and the exact host-sharing/pinning/reproducibility obligations.
+
 ---
 
 Scoring & ranking → [[Leaderboard and Evaluation]]
