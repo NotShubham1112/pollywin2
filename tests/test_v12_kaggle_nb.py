@@ -83,6 +83,13 @@ def test_v12_gnn_stage():
     assert "pretrained_encoder.pt" in code
     assert "gnn_test.csv" in code
 
+def test_v12_v11_reference_blend():
+    code, _ = _build()
+    assert "v11_blend_oof = {}" in code
+    assert "grid = np.linspace(0.0, 1.0, 21)" in code
+    assert "V11_W[tt] = float(np.mean(w_acc))" in code
+    assert "v11 reference blend" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

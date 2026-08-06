@@ -808,6 +808,43 @@ else:
     gnn_test_df = pd.read_csv(GNN_TEST_PATH).set_index("row_id")
 """)
 
+# =====================================================================
+M("## 6. v11 reference blend (per-target fold-safe weight)")
+
+# =====================================================================
+P("""grid = np.linspace(0.0, 1.0, 21)
+v11_blend_oof = {}
+v11_blend_te = {}
+V11_W = {}
+print("v11 reference blend (fold-safe per-target weight):")
+for tt in TARGETS:
+    m, idx, splits = get_splits(tt)
+    stack_oof = FINAL_OOF[tt]
+    y_tt = Y[idx]
+    g_vals = gnn_oof_df["gnn_oof"].reindex(dedup.index[idx]).to_numpy()
+    pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+    oof = np.full(m.sum(), np.nan)
+    fold_te = np.zeros(len(test)); w_acc = []
+    for tr, va in splits:
+        tr_l, va_l = pos[tr], pos[va]
+        best_w_here, best_r = 0.5, -np.inf
+        for w in grid:
+            pred = w * stack_oof[tr_l] + (1 - w) * g_vals[tr_l]
+            fin = ~np.isnan(pred) & ~np.isnan(y_tt[tr_l])
+            if fin.sum() < 5:
+                continue
+            r = r2_score(y_tt[tr_l][fin], pred[fin])
+            if r > best_r:
+                best_r, best_w_here = r, w
+        oof[va_l] = best_w_here * stack_oof[va_l] + (1 - best_w_here) * g_vals[va_l]
+        g_te = gnn_test_df["gnn_test"].reindex(test.index).to_numpy()
+        fold_te += (best_w_here * FINAL_TE[tt] + (1 - best_w_here) * g_te) / len(splits)
+        w_acc.append(best_w_here)
+    v11_blend_oof[tt] = oof; v11_blend_te[tt] = fold_te
+    V11_W[tt] = float(np.mean(w_acc)) if w_acc else np.nan
+    print(f"  {tt}: v11 blend OOF R2={r2_score(y_tt, oof):.4f}  mean_w={V11_W[tt]:.2f}")
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")
