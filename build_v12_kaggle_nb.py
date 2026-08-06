@@ -985,6 +985,67 @@ print("saved v12_bucket_compare.csv, v12_bucket_diag.csv")
 print(v12_bucket_compare.set_index("target").round(4).to_string())
 """)
 
+# =====================================================================
+M("## 8. Submission — bucket-MoE if it beats v11 mean, else v11 blend fallback")
+
+# =====================================================================
+P("""mean_v11 = float(v12_bucket_compare["v11_blend_oof"].mean())
+mean_bucket = float(v12_bucket_compare["v12_bucket_oof"].mean())
+USE_BUCKET = mean_bucket >= mean_v11
+if USE_BUCKET:
+    for tt in TARGETS:
+        FINAL_TE[tt] = BUCKET_TE[tt]
+    print(f"Bucket MoE ACTIVE: mean OOF {mean_bucket:.4f} >= v11 {mean_v11:.4f} -> submission = bucket-MoE")
+else:
+    for tt in TARGETS:
+        FINAL_TE[tt] = v11_blend_te[tt]
+    print(f"Bucket MoE did not beat v11 blend (mean {mean_bucket:.4f} < {mean_v11:.4f}); submission = v11 blend")
+print("mean OOF: stack %.4f | gnn %.4f | v11 blend %.4f | bucket-MoE %.4f" % (
+    v12_bucket_compare["stack_oof"].mean(), v12_bucket_compare["gnn_oof"].mean(),
+    mean_v11, mean_bucket))
+
+final = np.zeros(len(test))
+for tt in TARGETS:
+    m_te = (test["target_type"] == tt).values
+    final[m_te] = FINAL_TE[tt][m_te]
+final = final.copy()
+for _tt in ("egc", "egb", "ei"):
+    _mm = (test["target_type"].values == _tt)
+    final[_mm] = np.maximum(final[_mm], 0.0)
+_mm = (test["target_type"].values == "eps")
+final[_mm] = np.maximum(final[_mm], 1.0)
+_mm = (test["target_type"].values == "nc")
+final[_mm] = np.clip(final[_mm], 1.0, 3.0)
+sub = pd.DataFrame({"id": test["id"].values, "target": final})
+sub.to_csv(os.path.join(WORK, "submission.csv"), index=False)
+print("submission saved:", os.path.join(WORK, "submission.csv"), sub.shape)
+print(sub.head().to_string())
+print("Prediction stats by target:")
+print(pd.DataFrame({"target": test["target_type"], "pred": final}).groupby("target")["pred"].describe().round(3).to_string())
+""")
+
+P("""def savefig(fig, name):
+    fig.tight_layout()
+    p = os.path.join(FIG, name)
+    fig.savefig(p, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print("saved", p)
+
+cdf = v12_bucket_compare.set_index("target").reindex(TARGETS)
+fig, ax = plt.subplots(figsize=(12, 5))
+x = np.arange(len(TARGETS)); w = 0.2
+ax.bar(x - 1.5 * w, cdf["stack_oof"].values, w, label="stack", color="#999999")
+ax.bar(x - 0.5 * w, cdf["gnn_oof"].values, w, label="gnn", color="#d1495b")
+ax.bar(x + 0.5 * w, cdf["v11_blend_oof"].values, w, label="v11 blend", color="#f0a202")
+ax.bar(x + 1.5 * w, cdf["v12_bucket_oof"].values, w, label="bucket-MoE", color="#2a6fb0")
+ax.set_xticks(x); ax.set_xticklabels(TARGETS)
+ax.set_ylabel("OOF R2"); ax.set_title("v12 Chemistry Bucket MoE vs stack / GNN / v11 blend (fold-safe OOF)")
+ax.legend(); savefig(fig, "24_bucket_moe.png")
+
+print("\\n==== PIPELINE COMPLETE ====")
+print("working dir:", WORK)
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")

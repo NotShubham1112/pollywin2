@@ -108,6 +108,27 @@ def test_v12_no_trained_gate():
     assert "latent_embeddings.npy" not in code
     assert not re.search(r"\bgate\b", code, re.IGNORECASE)
 
+def test_v12_submission_and_figure():
+    code, _ = _build()
+    assert "USE_BUCKET" in code
+    assert "24_bucket_moe.png" in code
+    assert "np.maximum(final[_mm], 0.0)" in code
+    assert "np.maximum(final[_mm], 1.0)" in code
+    assert "np.clip(final[_mm], 1.0, 3.0)" in code
+    assert "submission saved:" in code
+    assert "==== PIPELINE COMPLETE ====" in code
+
+def test_v12_all_cells_compile():
+    """Every code cell must be valid Python (regression: a SyntaxError that only
+    nbconvert would catch)."""
+    import ast
+    subprocess.run([sys.executable, str(GEN)], cwd=str(REPO), check=True,
+                   capture_output=True, text=True)
+    nb = nbformat.read(str(NB), as_version=4)
+    for c in nb.cells:
+        if c.cell_type == "code":
+            ast.parse(c.source)
+
 if __name__ == "__main__":
     import traceback
     failed = 0
