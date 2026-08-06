@@ -492,6 +492,322 @@ for tt in TARGETS:
     print(f"  final {tt}: RMSE={rmse_metric(Y[m], oof):.4f}  (n_feats={len(cols)})")
 """)
 
+# =====================================================================
+M("## 5. Pretrained GNN — graph featurization, GINE encoder, PI1M pretrain + fold-safe fine-tune")
+
+# =====================================================================
+P("""ATOM_SYMBOLS = ["C", "N", "O", "S", "F", "Cl", "Br", "I", "Si", "P", "OTHER"]
+HYBRIDIZATIONS = ["SP", "SP2", "SP3", "SP3D", "SP3D2", "OTHER"]
+BOND_TYPES = ["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC"]
+
+def one_hot(value, choices):
+    vec = [0.0] * len(choices)
+    idx = choices.index(value) if value in choices else len(choices) - 1
+    vec[idx] = 1.0
+    return vec
+
+def atom_features(atom):
+    sym = atom.GetSymbol(); hyb = atom.GetHybridization().name
+    return (one_hot(sym, ATOM_SYMBOLS) + one_hot(hyb, HYBRIDIZATIONS) + [
+        atom.GetIsAromatic()*1.0, atom.IsInRing()*1.0, atom.GetDegree()/4.0,
+        atom.GetTotalNumHs()/4.0, atom.GetFormalCharge()/2.0])
+
+N_ATOM_FEATS = len(ATOM_SYMBOLS) + len(HYBRIDIZATIONS) + 5
+N_BOND_FEATS = len(BOND_TYPES) + 2
+
+def bond_features(bond):
+    return one_hot(bond.GetBondType().name, BOND_TYPES) + [
+        bond.GetIsConjugated()*1.0, bond.IsInRing()*1.0]
+
+def smiles_to_graph(smiles, target_idx=None, y=None, sample_weight=1.0):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None or mol.GetNumAtoms() < 2:
+        return None
+    x = torch.tensor([atom_features(a) for a in mol.GetAtoms()], dtype=torch.float)
+    edge_index, edge_attr = [], []
+    for bond in mol.GetBonds():
+        i, j = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+        bf = bond_features(bond)
+        edge_index += [[i, j], [j, i]]; edge_attr += [bf, bf]
+    if len(edge_index) == 0:
+        edge_index = [[0, 0]]; edge_attr = [[0.0] * N_BOND_FEATS]
+    edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
+    edge_attr = torch.tensor(edge_attr, dtype=torch.float)
+    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
+    if target_idx is not None:
+        data.target_idx = torch.tensor([target_idx], dtype=torch.long)
+        data.y = torch.tensor([y], dtype=torch.float)
+        data.w = torch.tensor([sample_weight], dtype=torch.float)
+    return data
+
+target_stats = {}
+for t in TARGETS:
+    vals = dedup.loc[dedup["target_type"] == t, "target"]
+    target_stats[t] = (vals.mean(), vals.std() + 1e-9)
+
+def build_train_graphs():
+    graphs = []
+    freq = dedup["target_type"].value_counts(normalize=True)
+    for row_id, row in zip(dedup.index, dedup.itertuples()):
+        ti = TARGET_IDX[row.target_type]
+        mean_, std_ = target_stats[row.target_type]
+        g = smiles_to_graph(row.smiles, target_idx=ti,
+                            y=(row.target - mean_) / std_, sample_weight=1.0/freq[row.target_type])
+        if g is not None:
+            g.row_id = row_id
+            graphs.append(g)
+    return graphs
+
+def build_test_graphs():
+    graphs = []
+    for row_id, row in zip(test.index, test.itertuples()):
+        g = smiles_to_graph(row.smiles, target_idx=TARGET_IDX[row.target_type], y=0.0, sample_weight=1.0)
+        if g is not None:
+            g.row_id = row_id
+            graphs.append(g)
+    return graphs
+
+def build_pretrain_graphs(smiles_list):
+    graphs = []
+    for smi in smiles_list:
+        g = smiles_to_graph(smi)
+        if g is not None:
+            graphs.append(g)
+    return graphs
+
+class GINEEncoder(nn.Module):
+    def __init__(self, n_atom_feats, n_bond_feats, hidden=128, n_layers=4, dropout=0.2):
+        super().__init__()
+        self.atom_encoder = nn.Linear(n_atom_feats, hidden)
+        self.bond_encoder = nn.ModuleList([nn.Linear(n_bond_feats, hidden) for _ in range(n_layers)])
+        self.convs = nn.ModuleList(); self.bns = nn.ModuleList()
+        for _ in range(n_layers):
+            mlp = nn.Sequential(nn.Linear(hidden, hidden), nn.ReLU(), nn.Linear(hidden, hidden))
+            self.convs.append(GINEConv(mlp, edge_dim=hidden))
+            self.bns.append(nn.BatchNorm1d(hidden))
+        self.dropout = dropout
+
+    def forward(self, x, edge_index, edge_attr):
+        h = self.atom_encoder(x)
+        for conv, bn, bond_enc in zip(self.convs, self.bns, self.bond_encoder):
+            e = bond_enc(edge_attr)
+            h = conv(h, edge_index, e)
+            h = bn(h); h = F.relu(h); h = F.dropout(h, p=self.dropout, training=self.training)
+        return h
+
+class PretrainModel(nn.Module):
+    def __init__(self, n_atom_feats, n_bond_feats, hidden=128, n_layers=4, dropout=0.2,
+                 mask_atom=0.15, mask_bond=0.20):
+        super().__init__()
+        self.encoder = GINEEncoder(n_atom_feats, n_bond_feats, hidden, n_layers, dropout)
+        self.atom_decoder = nn.Sequential(nn.Linear(hidden, hidden), nn.ReLU(),
+                                          nn.Linear(hidden, n_atom_feats))
+        self.bond_decoder = nn.Sequential(nn.Linear(2*hidden, hidden), nn.ReLU(),
+                                          nn.Linear(hidden, n_bond_feats))
+        self.mask_atom = mask_atom; self.mask_bond = mask_bond
+
+    def forward(self, x, edge_index, edge_attr, batch):
+        n = x.size(0); m = edge_index.size(1)
+        atom_mask = torch.rand(n, device=x.device) < self.mask_atom
+        bond_mask = torch.rand(m, device=x.device) < self.mask_bond
+        x_c = x.clone(); x_c[atom_mask] = 0.0
+        ea_c = edge_attr.clone(); ea_c[bond_mask] = 0.0
+        h = self.encoder(x_c, edge_index, ea_c)
+        if atom_mask.any():
+            atom_loss = F.mse_loss(self.atom_decoder(h[atom_mask]), x[atom_mask])
+        else:
+            atom_loss = torch.zeros((), device=x.device)
+        src = h[edge_index[0, bond_mask]]; dst = h[edge_index[1, bond_mask]]
+        if bond_mask.any() and src.numel() > 0:
+            bond_loss = F.mse_loss(self.bond_decoder(torch.cat([src, dst], dim=1)), edge_attr[bond_mask])
+        else:
+            bond_loss = torch.zeros((), device=x.device)
+        return atom_loss, bond_loss
+
+class GNNTrunk(nn.Module):
+    def __init__(self, n_atom_feats, n_bond_feats, hidden=128, n_layers=4,
+                 n_targets=len(TARGETS), dropout=0.2):
+        super().__init__()
+        self.encoder = GINEEncoder(n_atom_feats, n_bond_feats, hidden, n_layers, dropout)
+        self.head_in = hidden * 2
+        self.heads = nn.ModuleList([
+            nn.Sequential(nn.Linear(self.head_in, 64), nn.ReLU(),
+                          nn.Dropout(dropout), nn.Linear(64, 1))
+            for _ in range(n_targets)])
+
+    def forward(self, data):
+        h = self.encoder(data.x, data.edge_index, data.edge_attr)
+        pooled = torch.cat([global_mean_pool(h, data.batch), global_add_pool(h, data.batch)], dim=1)
+        return torch.cat([head(pooled) for head in self.heads], dim=1)
+
+    def load_encoder(self, state_dict):
+        enc = {k[len("encoder."):]: v for k, v in state_dict.items() if k.startswith("encoder.")}
+        self.encoder.load_state_dict(enc, strict=False)
+""")
+
+P("""GNN_OOF_PATH = os.path.join(WORK, "gnn_oof.csv")
+GNN_TEST_PATH = os.path.join(WORK, "gnn_test.csv")
+if ON_KAGGLE:
+    GNN_CACHE_OOF = None; GNN_CACHE_TEST = None
+else:
+    GNN_CACHE_OOF = os.path.join("vault", "kernel-v10-output", "gnn_oof.csv")
+    GNN_CACHE_TEST = os.path.join("vault", "kernel-v10-output", "gnn_test.csv")
+USE_GNN_CACHE = (not ON_KAGGLE) and SMOKE and os.path.exists(GNN_CACHE_OOF) and os.path.exists(GNN_CACHE_TEST)
+
+if USE_GNN_CACHE:
+    gnn_oof_df = pd.read_csv(GNN_CACHE_OOF).set_index("row_id")
+    gnn_test_df = pd.read_csv(GNN_CACHE_TEST).set_index("row_id")
+    print("SMOKE: loaded GNN cache from vault/kernel-v10-output")
+else:
+    t0 = time.time()
+    train_graphs = build_train_graphs()
+    test_graphs = build_test_graphs()
+    print(f"Built {len(train_graphs)} train graphs, {len(test_graphs)} test graphs in {time.time()-t0:.0f}s")
+
+    pl = []
+    if pl_path:
+        pldf = pd.read_csv(pl_path)
+        smi_col = "SMILES" if "SMILES" in pldf.columns else "smiles"
+        pldf = pldf[[smi_col]].rename(columns={smi_col: "smiles"})
+        pldf["canon"] = pldf["smiles"].map(canon_key)
+        pl = pldf.drop_duplicates("canon")["smiles"].tolist()
+        rng = np.random.RandomState(SEED)
+        rng.shuffle(pl)
+        pl = pl[:PRETRAIN_SAMPLE]
+        print("PI1M pretraining corpus:", len(pl), "SMILES (capped at", PRETRAIN_SAMPLE, ")")
+    pl_graphs = build_pretrain_graphs(pl) if pl else []
+    print("pretraining graphs:", len(pl_graphs))
+
+    def pretrain(epochs=PRETRAIN_EPOCHS, batch_size=256, lr=1e-3, patience=5):
+        if not pl_graphs:
+            print("No PI1M graphs - pretraining skipped")
+            return None
+        model = PretrainModel(N_ATOM_FEATS, N_BOND_FEATS).to(device)
+        loader = DataLoader(pl_graphs, batch_size=batch_size, shuffle=True)
+        opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
+        sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, patience=3, factor=0.5)
+        best = np.inf; best_state = None; t0 = time.time()
+        for epoch in range(epochs):
+            model.train(); tot_a = 0.0; tot_b = 0.0; nb = 0
+            for batch in loader:
+                batch = batch.to(device)
+                opt.zero_grad()
+                a_loss, b_loss = model(batch.x, batch.edge_index, batch.edge_attr, batch)
+                loss = a_loss + 0.5 * b_loss
+                loss.backward(); opt.step()
+                tot_a += a_loss.item(); tot_b += b_loss.item(); nb += 1
+            avg_a = tot_a / max(nb, 1); avg_b = tot_b / max(nb, 1)
+            sched.step(avg_a + 0.5 * avg_b)
+            val = avg_a + 0.5 * avg_b
+            if val < best:
+                best = val; best_state = {k: v.clone() for k, v in model.state_dict().items()}
+            print(f"pretrain ep {epoch+1}/{epochs}: atom={avg_a:.4f} bond={avg_b:.4f} ({time.time()-t0:.0f}s)", flush=True)
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        model.load_state_dict(best_state)
+        torch.save(model.state_dict(), os.path.join(WORK, "pretrained_encoder.pt"))
+        print("saved pretrained_encoder.pt")
+        return best_state
+
+    def train_gnn(init_state=None, epochs=MINI_EPOCHS, batch_size=64, lr=1e-3, patience=10,
+                  trust_frac=0.15):
+        row_to_graph = {g.row_id: g for g in train_graphs}
+        oof = np.full(len(dedup), np.nan)
+        fold_states = []
+        for fold in sorted(dedup["fold"].unique()):
+            fold_train = dedup.index[dedup["fold"] != fold]
+            val = dedup.index[dedup["fold"] == fold]
+            rng = np.random.RandomState(SEED + fold)
+            trust_mask = rng.rand(len(fold_train)) < trust_frac
+            trust_ids = fold_train[trust_mask]; tr_ids = fold_train[~trust_mask]
+            tr_graphs = [row_to_graph[i] for i in tr_ids if i in row_to_graph]
+            val_graphs = [row_to_graph[i] for i in val if i in row_to_graph]
+            tr_loader = DataLoader(tr_graphs, batch_size=batch_size, shuffle=True)
+            val_loader = DataLoader(val_graphs, batch_size=256, shuffle=False)
+            model = GNNTrunk(N_ATOM_FEATS, N_BOND_FEATS).to(device)
+            if init_state is not None:
+                model.load_encoder(init_state)
+            opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
+            sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, patience=4, factor=0.5)
+            best_val, bad_epochs, best_state = np.inf, 0, None
+            epochs_used = 0; ft0 = time.time()
+            for epoch in range(epochs):
+                epochs_used = epoch + 1
+                model.train()
+                for batch in tr_loader:
+                    batch = batch.to(device); opt.zero_grad()
+                    pred = model(batch)
+                    pred_sel = pred.gather(1, batch.target_idx.unsqueeze(1)).squeeze(1)
+                    loss = (F.mse_loss(pred_sel, batch.y, reduction="none") * batch.w).mean()
+                    loss.backward(); opt.step()
+                model.eval(); vloss = []
+                with torch.no_grad():
+                    for batch in val_loader:
+                        batch = batch.to(device)
+                        pred = model(batch)
+                        pred_sel = pred.gather(1, batch.target_idx.unsqueeze(1)).squeeze(1)
+                        vloss.append(F.mse_loss(pred_sel, batch.y).item())
+                val_loss = np.mean(vloss) if vloss else np.inf
+                sched.step(val_loss)
+                if val_loss < best_val:
+                    best_val, bad_epochs = val_loss, 0
+                    best_state = {k: v.clone() for k, v in model.state_dict().items()}
+                else:
+                    bad_epochs += 1
+                    if bad_epochs >= patience:
+                        break
+            model.load_state_dict(best_state); model.eval()
+            with torch.no_grad():
+                for g in val_graphs:
+                    gb = Batch.from_data_list([g]).to(device)
+                    pred = model(gb)
+                    ti = int(g.target_idx.item()); mean_, std_ = target_stats[TARGETS[ti]]
+                    oof[dedup.index.get_loc(g.row_id)] = pred[0, ti].item() * std_ + mean_
+            fold_states.append((fold, best_state))
+            print(f"  fold {fold}: best val MSE (norm)={best_val:.4f} ({time.time()-ft0:.0f}s, ep={epochs_used})", flush=True)
+            del model; gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        return oof, fold_states
+
+    def predict_graphs_on(graphs, state):
+        model = GNNTrunk(N_ATOM_FEATS, N_BOND_FEATS).to(device)
+        model.load_state_dict(state); model.eval()
+        preds = {}
+        with torch.no_grad():
+            for g in graphs:
+                gb = Batch.from_data_list([g]).to(device)
+                pred = model(gb)
+                ti = int(g.target_idx.item()); t_name = TARGETS[ti]
+                mean_, std_ = target_stats[t_name]
+                preds[g.row_id] = pred[0, ti].item() * std_ + mean_
+        return preds
+
+    print("=== Pretraining GNN on PI1M ===")
+    pretrain_state = pretrain()
+    print("=== Fine-tuning pretrained GNN (fold-safe, trust check) ===")
+    pt_oof, pt_states = train_gnn(init_state=pretrain_state)
+
+    test_preds = {}
+    print("Computing test predictions (bag over fold models)...")
+    for fold, state in pt_states:
+        p = predict_graphs_on(test_graphs, state)
+        for rid, v in p.items():
+            test_preds[rid] = test_preds.get(rid, 0.0) + v / len(pt_states)
+        del p
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    pd.DataFrame({"row_id": list(dedup.index), "target_type": dedup["target_type"].values,
+                  "gnn_oof": pt_oof}).to_csv(GNN_OOF_PATH, index=False)
+    pd.DataFrame({"row_id": list(test.index), "target_type": test["target_type"].values,
+                  "gnn_test": [test_preds.get(r, np.nan) for r in test.index]}).to_csv(GNN_TEST_PATH, index=False)
+    print("wrote gnn_oof.csv, gnn_test.csv")
+    gnn_oof_df = pd.read_csv(GNN_OOF_PATH).set_index("row_id")
+    gnn_test_df = pd.read_csv(GNN_TEST_PATH).set_index("row_id")
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")

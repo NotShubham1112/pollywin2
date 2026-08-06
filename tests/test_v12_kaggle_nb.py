@@ -70,6 +70,19 @@ def test_v12_stacking():
     assert "Ridge(alpha=10.0)" in code
     assert "StandardScaler" in code
 
+def test_v12_gnn_stage():
+    code, _ = _build()
+    assert "class GINEEncoder(nn.Module):" in code
+    assert "class PretrainModel(nn.Module):" in code
+    assert "class GNNTrunk(nn.Module):" in code
+    assert "def pretrain(epochs=PRETRAIN_EPOCHS" in code
+    assert "def train_gnn(init_state=None" in code
+    assert "def predict_graphs_on" in code
+    assert 'os.path.join("vault", "kernel-v10-output", "gnn_oof.csv")' in code
+    assert 'gnn_oof_df = pd.read_csv(GNN_CACHE_OOF).set_index("row_id")' in code
+    assert "pretrained_encoder.pt" in code
+    assert "gnn_test.csv" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
