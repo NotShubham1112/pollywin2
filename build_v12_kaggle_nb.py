@@ -845,6 +845,146 @@ for tt in TARGETS:
     print(f"  {tt}: v11 blend OOF R2={r2_score(y_tt, oof):.4f}  mean_w={V11_W[tt]:.2f}")
 """)
 
+# =====================================================================
+M("## 7. Chemistry Bucket MoE (per-cluster fold-safe weight blend)")
+
+# =====================================================================
+P("""from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+ROUTER_COLS = ["MolWt", "ExactMolWt", "HeavyAtomMolWt", "ring_density", "arom_ratio",
+               "hetero_density", "halogen_density", "sulfur_density", "flexibility",
+               "rigidity", "logp", "hbd_density", "hba_density"]
+BUCKET_KS = [2, 3, 4]
+W_GRID = np.linspace(0.0, 1.0, 21)
+assert all(c in Xtr.columns for c in ROUTER_COLS), "router cols missing from feature factory"
+
+def cluster_assignment(tt, K):
+    m = (dedup["target_type"] == tt).values
+    idx = np.where(m)[0]
+    Xr = Xtr[ROUTER_COLS].iloc[idx].fillna(0.0)
+    sc = StandardScaler().fit(Xr)
+    Z = sc.transform(Xr)
+    if BUCKET_FIT_CAP and len(idx) > BUCKET_FIT_CAP:
+        km = KMeans(n_clusters=K, random_state=42, n_init=10).fit(Z[:BUCKET_FIT_CAP])
+        labs = km.predict(Z)
+    else:
+        km = KMeans(n_clusters=K, random_state=42, n_init=10).fit(Z)
+        labs = km.labels_
+    m_te = (test["target_type"] == tt).values
+    te_idx = np.where(m_te)[0]
+    Zte = sc.transform(Xte[ROUTER_COLS].iloc[te_idx].fillna(0.0))
+    labs_te = km.predict(Zte)
+    return km, labs, labs_te, idx
+
+def run_bucket_moe(tt, K, splits):
+    m = (dedup["target_type"] == tt).values
+    idx = np.where(m)[0]
+    y_tt = Y[idx]
+    stack_oof = FINAL_OOF[tt]
+    g_oof = gnn_oof_df["gnn_oof"].reindex(dedup.index[idx]).to_numpy()
+    g_te = gnn_test_df["gnn_test"].reindex(test.index).to_numpy()
+    m_te = (test["target_type"] == tt).values
+    te_idx = np.where(m_te)[0]
+
+    w_fallback, _br = 0.5, -np.inf
+    for w in W_GRID:
+        pred = w * stack_oof + (1 - w) * g_oof
+        fin = ~np.isnan(pred) & ~np.isnan(y_tt)
+        if fin.sum() < 5:
+            continue
+        r = r2_score(y_tt[fin], pred[fin])
+        if r > _br:
+            _br, w_fallback = r, w
+
+    _, labs, labs_te, idx = cluster_assignment(tt, K)
+    pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+    fold_w = np.zeros((len(splits), K)); fold_n = np.zeros((len(splits), K))
+    blend_oof = np.full(m.sum(), np.nan)
+    for f, (tr, va) in enumerate(splits):
+        tr_l, va_l = pos[tr], pos[va]
+        for c in range(K):
+            c_tr = tr_l[labs[tr_l] == c]
+            c_va = va_l[labs[va_l] == c]
+            if len(c_va) == 0:
+                continue
+            if len(c_tr) < 5:
+                w_c = w_fallback
+            else:
+                best_w_here, best_r = w_fallback, -np.inf
+                for w in W_GRID:
+                    pred = w * stack_oof[c_tr] + (1 - w) * g_oof[c_tr]
+                    fin = ~np.isnan(pred) & ~np.isnan(y_tt[c_tr])
+                    if fin.sum() < 5:
+                        continue
+                    r = r2_score(y_tt[c_tr][fin], pred[fin])
+                    if r > best_r:
+                        best_r, best_w_here = r, w
+                w_c = best_w_here
+            fold_w[f, c] = w_c; fold_n[f, c] = len(c_va)
+            blend_oof[c_va] = w_c * stack_oof[c_va] + (1 - w_c) * g_oof[c_va]
+
+    mean_w = np.array([np.mean(fold_w[fold_n[:, c] > 0, c]) if (fold_n[:, c] > 0).any() else w_fallback
+                       for c in range(K)])
+    blend_te = np.zeros(len(test))
+    for c in range(K):
+        sel = te_idx[labs_te == c]
+        if len(sel) == 0:
+            continue
+        blend_te[sel] = mean_w[c] * FINAL_TE[tt][sel] + (1 - mean_w[c]) * g_te[sel]
+    return blend_oof, blend_te, mean_w, labs, km
+
+bucket_results = {}
+BUCKET_TE = {}
+BUCKET_K = {}
+compare_rows = []
+diag_rows = []
+for tt in TARGETS:
+    m, idx, splits = get_splits(tt)
+    y_tt = Y[idx]
+    stack_oof = FINAL_OOF[tt]
+    g_oof = gnn_oof_df["gnn_oof"].reindex(dedup.index[idx]).to_numpy()
+    best_K, best_r = None, -np.inf
+    for K in BUCKET_KS:
+        bo, bte, mean_w, labs, km = run_bucket_moe(tt, K, splits)
+        fin = ~np.isnan(bo)
+        r = r2_score(y_tt[fin], bo[fin])
+        bucket_results[(tt, K)] = (bo, bte, mean_w, labs, km)
+        if r > best_r:
+            best_K, best_r = K, r
+    BUCKET_K[tt] = best_K
+    bo, bte, mean_w, labs, km = bucket_results[(tt, best_K)]
+    BUCKET_TE[tt] = bte
+    g_sel_all = ~np.isnan(g_oof)
+    for c in range(best_K):
+        sel = labs == c
+        if sel.sum() == 0:
+            continue
+        gsel = g_oof[sel]; gfin = ~np.isnan(gsel)
+        r_g = r2_score(y_tt[sel][gfin], gsel[gfin]) if gfin.sum() >= 5 else np.nan
+        diag_rows.append({"target": tt, "cluster": int(c), "n": int(sel.sum()),
+                          "stack_oof": round(r2_score(y_tt[sel], stack_oof[sel]), 4),
+                          "gnn_oof": round(r_g, 4) if not np.isnan(r_g) else np.nan,
+                          "blend_oof": round(r2_score(y_tt[sel], bo[sel]), 4),
+                          "w_stack": round(float(mean_w[c]), 3)})
+    compare_rows.append({"target": tt,
+                         "stack_oof": round(r2_score(y_tt, stack_oof), 4),
+                         "gnn_oof": round(r2_score(y_tt[g_sel_all], g_oof[g_sel_all]), 4),
+                         "v11_blend_oof": round(r2_score(y_tt, v11_blend_oof[tt]), 4),
+                         "v12_bucket_oof": round(r2_score(y_tt[~np.isnan(bo)], bo[~np.isnan(bo)]), 4),
+                         "K": best_K,
+                         "mean_w": round(float(np.mean(mean_w)), 3)})
+    print(f"{tt}: chosen K={best_K} bucketOOF={compare_rows[-1]['v12_bucket_oof']:.4f} "
+          f"v11OOF={compare_rows[-1]['v11_blend_oof']:.4f}")
+
+v12_bucket_compare = pd.DataFrame(compare_rows)
+v12_bucket_diag = pd.DataFrame(diag_rows)
+v12_bucket_compare.to_csv(os.path.join(WORK, "v12_bucket_compare.csv"), index=False)
+v12_bucket_diag.to_csv(os.path.join(WORK, "v12_bucket_diag.csv"), index=False)
+print("saved v12_bucket_compare.csv, v12_bucket_diag.csv")
+print(v12_bucket_compare.set_index("target").round(4).to_string())
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")

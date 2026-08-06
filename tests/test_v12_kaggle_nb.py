@@ -90,6 +90,24 @@ def test_v12_v11_reference_blend():
     assert "V11_W[tt] = float(np.mean(w_acc))" in code
     assert "v11 reference blend" in code
 
+def test_v12_bucket_moe():
+    code, _ = _build()
+    assert 'ROUTER_COLS = ["MolWt", "ExactMolWt", "HeavyAtomMolWt", "ring_density", "arom_ratio"' in code
+    assert "BUCKET_KS = [2, 3, 4]" in code
+    assert "KMeans(n_clusters=K, random_state=42, n_init=10)" in code
+    assert "def cluster_assignment(tt, K):" in code
+    assert "def run_bucket_moe(tt, K, splits):" in code
+    assert "km.predict(Zte)" in code
+    assert "v12_bucket_compare.csv" in code and "v12_bucket_diag.csv" in code
+    assert '"K": best_K' in code
+    assert "w_stack" in code
+
+def test_v12_no_trained_gate():
+    import re
+    code, _ = _build()
+    assert "latent_embeddings.npy" not in code
+    assert not re.search(r"\bgate\b", code, re.IGNORECASE)
+
 if __name__ == "__main__":
     import traceback
     failed = 0
