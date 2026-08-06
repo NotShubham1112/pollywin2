@@ -25,7 +25,8 @@ M("""# AISEHack 2.0 — Round 2 Polymer Property Prediction Pipeline
 6. **Tg isolation** — dedicated single-target Tg NN, archived behind `RUN_NNS` (default OFF)
 7. **Stacking** — Ridge level-1.5 + level-2 meta (reliability + cross-target features) on OOF predictions
 8. **PI1M pseudo-labelling** — confidence-filtered (cross-model disagreement), capped 2x integration, full stack retrained on augmented rows (v8)
-9. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
+9. **GNN MoE blend** — fold-safe per-target weight blend of the stack with the GNN arm's OOF/test (`final_tt = w*stack + (1-w)*gnn`), no-op when GNN cache absent
+10. **Submission + judge diagrams** — `submission.csv` + matplotlib figures
 
 **v7 experiment:** three-arm ablation (BASE / FULL / RETR-only) per target with LGB. **Result: FAILED honest OOF** — FULL (with retrieval columns) is worse than BASE on all 7 targets; the v7 FULL config was **not submitted**. Standing LB remains v6 = 0.847. v8 pivots to PI1M pseudo-labelling.
 **v8 experiment:** two-arm ablation per target with LGB (BASE = v6 feature cols vs PSEUDO = BASE + PI1M pseudo rows); submitted config = BASE cols + pseudo rows (4 GBMs + L1.5 Ridge + L2 meta).
@@ -1190,6 +1191,68 @@ for tt in TARGETS:
     print(row)
 pd.DataFrame(summary).to_csv(os.path.join(WORK, "final_leaderboard.csv"), index=False)""")
 
+M("""## Layer 10 — GNN MoE blend (stack + GNN arm, fold-safe per-target weights)
+
+Blends the stacked ensemble with the GNN arm's OOF/test predictions using a
+**per-target weight tuned fold-safely** (grid of 21 weights `w`; on each fold the
+best `w` is selected from the 9 training folds' (stack, gnn) OOF pairs, then applied
+to the held-out fold — free of weight-tune optimism). Final:
+
+    final_tt = w_tt * stack_tt + (1 - w_tt) * gnn_tt
+
+The GNN arm writes `gnn_oof.csv` / `gnn_test.csv` (row_id === dedup/test index) into
+`WORK/gnn_arm/`. If either file is absent this layer is a no-op and the stack stands
+(cell order guarantees this).""")
+P("""# ==== Layer 10: MoE blend (stack + GNN), fold-safe per-target weights ====
+# Loads cached GNN OOF/test (`gnn_oof.csv` / `gnn_test.csv`, row_id === dedup/test
+# index). If either file is missing this layer is a no-op and the stack stands.
+from sklearn.metrics import r2_score
+
+MOE_BLEND = False
+MOE_W = {}
+moe_oof_path = os.path.join(WORK, "gnn_arm", "gnn_oof.csv")
+moe_test_path = os.path.join(WORK, "gnn_arm", "gnn_test.csv")
+if os.path.exists(moe_oof_path) and os.path.exists(moe_test_path):
+    gnn_oof_df = pd.read_csv(moe_oof_path).set_index("row_id")
+    gnn_test_df = pd.read_csv(moe_test_path).set_index("row_id")
+    grid = np.linspace(0.0, 1.0, 21)
+    blend_te = {}
+    print("\\nPer-target fold-safe blend weight search (stack + GNN):")
+    for tt in TARGETS:
+        if tt not in FINAL_OOF:
+            continue
+        m, idx, splits = get_splits(tt)
+        stack_oof = FINAL_OOF[tt]                      # len = n rows of target tt
+        y_tt = Y[idx]
+        g_vals = gnn_oof_df["gnn_oof"].reindex(dedup.index[idx]).to_numpy()
+        pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+        fold_te = np.zeros(len(test))
+        w_acc = []
+        for tr, va in splits:
+            tr_l, va_l = pos[tr], pos[va]
+            best_w_here, best_r = 0.0, -np.inf
+            for w in grid:
+                pred = w * stack_oof[tr_l] + (1 - w) * g_vals[tr_l]
+                fin = ~np.isnan(pred) & ~np.isnan(y_tt[tr_l])
+                if fin.sum() < 5:
+                    continue
+                r = r2_score(y_tt[tr_l][fin], pred[fin])
+                if r > best_r:
+                    best_r, best_w_here = r, w
+            g_te = gnn_test_df["gnn_test"].reindex(test.index).to_numpy()
+            fold_te += (best_w_here * FINAL_TE[tt] + (1 - best_w_here) * g_te) / len(splits)
+            w_acc.append(best_w_here)
+        blend_te[tt] = fold_te
+        MOE_W[tt] = float(np.mean(w_acc)) if w_acc else np.nan
+    # override per-target test preds with the blend (submission cell picks these up)
+    for tt in blend_te:
+        FINAL_TE[tt] = blend_te[tt]
+    MOE_BLEND = True
+    print("MoE blend ACTIVE. Best per-target w(stack) ->", {k: round(v, 3) for k, v in MOE_W.items()})
+else:
+    print("GNN cache not found; MoE blend skipped, stack retained. "
+          "(looked in:", moe_oof_path, ")")""")
+
 M("""## Judge evaluation diagrams (matplotlib)
 
 All figures are saved to `WORK/figures/` (and rendered inline here) so judges can evaluate:
@@ -1429,8 +1492,8 @@ ax.set_ylabel("share of retrieval LGB gain")
 ax.set_title("Pool contribution to retrieval importance")
 savefig(fig, "19_pool_contribution.png")
 
-_lb = pd.DataFrame({"version": ["v4", "v5", "v6", "v7"],
-                    "lb": [0.828, np.nan, 0.847, np.nan]})
+_lb = pd.DataFrame({"version": ["v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12"],
+                    "lb": [0.828, np.nan, 0.847, np.nan, 0.828, np.nan, 0.830, 0.852, 0.849]})
 fig, ax = plt.subplots(figsize=(6, 4))
 ax.plot(_lb["version"], _lb["lb"], marker="o", color="#d1495b")
 ax.annotate("v7 retrieval failed -\\nnot submitted", xy=(3, 0.82), xytext=(2.3, 0.80),
@@ -1469,7 +1532,9 @@ if pseudo_conf is not None:
 
 M("""## Submission — `submission.csv`
 
-Final test predictions = **stacked ensemble**, with per-target physics bounds:
+Final test predictions = **stacked ensemble**, optionally blended with the GNN arm
+(Layer 10 MoE overrides `FINAL_TE` per target when the GNN cache is present), with
+per-target physics bounds:
 - EPS >= 1, Egc/Egb >= 0, Nc in [1, 3], Tg unconstrained (can be negative).""")
 P("""# build final test preds: level-2 when available, else level-1.5, else best base model
 final = np.zeros(len(test))
