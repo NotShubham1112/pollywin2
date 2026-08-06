@@ -59,6 +59,17 @@ def test_v12_harness_and_gbm():
     assert 'oof_store[(r["key"], r["target"])] = r["oof"]' in code
     assert "SMOKE: loaded" in code
 
+def test_v12_stacking():
+    code, _ = _build()
+    assert "def store_key(b, tt):" in code
+    assert "L15_OOF = {}; L15_TE = {}" in code
+    assert "CROSS_MAP = {" in code
+    assert "def reliability_features(tt, models):" in code
+    assert "def cross_oof_features(tt):" in code
+    assert "FINAL_OOF = {}; FINAL_TE = {}" in code
+    assert "Ridge(alpha=10.0)" in code
+    assert "StandardScaler" in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0

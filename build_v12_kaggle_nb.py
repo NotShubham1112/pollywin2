@@ -383,6 +383,115 @@ else:
     print("saved moe_gbm_chk.parquet")
 """)
 
+# =====================================================================
+M("## 4. Stacking — L1.5 Ridge + L2 meta (reliability + cross-target OOF)")
+
+# =====================================================================
+P("""from sklearn.linear_model import Ridge
+from sklearn.preprocessing import StandardScaler
+
+BASE_MODELS = ["lgb", "cat", "xgb", "hgb"]
+
+def store_key(b, tt):
+    return (b + "_" + tt, tt)
+
+def build_stack_features(oof_store, tt, models):
+    feats, cols = [], []
+    for b in models:
+        k = store_key(b, tt)
+        if k in oof_store:
+            feats.append(oof_store[k]); cols.append(k)
+    if len(feats) == 0:
+        return None, None
+    return np.column_stack(feats), cols
+
+L15_OOF = {}; L15_TE = {}
+print("Level-1.5 Ridge stack (per target, own base OOFs)...")
+for tt in TARGETS:
+    m, idx, splits = get_splits(tt)
+    Z, cols = build_stack_features(oof_store, tt, BASE_MODELS)
+    if Z is None:
+        print(f"  {tt}: no base features"); continue
+    Zte = np.column_stack([test_store[c] for c in cols])
+    pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+    oof = np.zeros(m.sum()); te_pred = np.zeros(len(Zte))
+    for tr, va in splits:
+        tr_l, va_l = pos[tr], pos[va]
+        sr = StandardScaler().fit(Z[tr_l]); Ztr_s = sr.transform(Z[tr_l]); Zva_s = sr.transform(Z[va_l])
+        meta = Ridge(alpha=10.0); meta.fit(Ztr_s, Y[idx][tr_l])
+        oof[va_l] = meta.predict(Zva_s)
+        te_pred += meta.predict(sr.transform(Zte)) / len(splits)
+    L15_OOF[tt] = oof; L15_TE[tt] = te_pred
+    print(f"  l15 {tt}: RMSE={rmse_metric(Y[m], oof):.4f}  (cols={cols})")
+
+CROSS_MAP = {
+    "eps": ["nc","egc","egb","eea"],
+    "nc": ["eps","egb","egc","ei"],
+    "egc": ["egb","eea","nc","eps","ei"],
+    "egb": ["egc","nc","eea","eps","ei"],
+    "ei": ["egc","egb","nc"],
+    "eea": ["egc","egb","eps"],
+    "tg": [],
+}
+
+def reliability_features(tt, models):
+    Z, cols = build_stack_features(oof_store, tt, models)
+    if Z is None:
+        return None, None
+    feats = np.column_stack([Z.mean(1), Z.std(1), Z.max(1), Z.min(1)])
+    return feats, ["rel_mean", "rel_std", "rel_max", "rel_min"]
+
+def cross_oof_features(tt):
+    feats, cols = [], []
+    m_tt = (dedup["target_type"] == tt).values
+    for ct in CROSS_MAP[tt]:
+        m_ct = (dedup["target_type"] == ct).values
+        c2o = dict(zip(dedup.loc[m_ct, "canon"].values, L15_OOF[ct]))
+        vals = np.array([c2o.get(c, np.nan) for c in dedup.loc[m_tt, "canon"].values], dtype=np.float32)
+        miss = np.isnan(vals).astype(np.float32)
+        vals = np.nan_to_num(vals, nan=float(np.nanmean(L15_OOF[ct])))
+        feats += [vals, miss]; cols += [f"cross_{ct}", f"cross_{ct}_miss"]
+    if not feats:
+        return None, None
+    return np.column_stack(feats), cols
+
+def cross_te_features(tt):
+    feats, cols = [], []
+    for ct in CROSS_MAP[tt]:
+        feats.append(np.asarray(L15_TE[ct], dtype=np.float32))
+        feats.append(np.zeros(len(test), dtype=np.float32))
+        cols += [f"cross_{ct}", f"cross_{ct}_miss"]
+    if not feats:
+        return None, None
+    return np.column_stack(feats), cols
+
+FINAL_OOF = {}; FINAL_TE = {}
+print("Level-2 meta (own base + reliability + cross-target OOF)...")
+for tt in TARGETS:
+    m, idx, splits = get_splits(tt)
+    Z1, c1 = build_stack_features(oof_store, tt, BASE_MODELS)
+    if Z1 is None:
+        print(f"  {tt}: no base features"); continue
+    Zrel, crel = reliability_features(tt, BASE_MODELS)
+    Zcr, ccr = cross_oof_features(tt)
+    Z2 = np.column_stack([Z1, Zrel] + ([Zcr] if Zcr is not None else []))
+    cols = c1 + crel + (ccr or [])
+    Zte1 = np.column_stack([test_store[c] for c in c1])
+    Zte_rel = np.column_stack([Zte1.mean(1), Zte1.std(1), Zte1.max(1), Zte1.min(1)])
+    Zte_cr, _ = cross_te_features(tt)
+    Zte2 = np.column_stack([Zte1, Zte_rel] + ([Zte_cr] if Zte_cr is not None else []))
+    pos = np.full(len(dedup), -1, dtype=int); pos[idx] = np.arange(len(idx))
+    oof = np.zeros(m.sum()); te_pred = np.zeros(len(Zte2))
+    for tr, va in splits:
+        tr_l, va_l = pos[tr], pos[va]
+        sr = StandardScaler().fit(Z2[tr_l]); Z2tr = sr.transform(Z2[tr_l]); Z2va = sr.transform(Z2[va_l])
+        meta = Ridge(alpha=10.0); meta.fit(Z2tr, Y[idx][tr_l])
+        oof[va_l] = meta.predict(Z2va)
+        te_pred += meta.predict(sr.transform(Zte2)) / len(splits)
+    FINAL_OOF[tt] = oof; FINAL_TE[tt] = te_pred
+    print(f"  final {tt}: RMSE={rmse_metric(Y[m], oof):.4f}  (n_feats={len(cols)})")
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")
