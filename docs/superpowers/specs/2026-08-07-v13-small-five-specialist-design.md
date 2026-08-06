@@ -85,10 +85,11 @@ v10 PI1M-pretrained GINE trunk (last 2 MP layers unfrozen) ──► graph embed
    ├── Component D: tg, egc heads (embedding only)                  │
    ├── Component C: eps, nc, ei, eea, egb heads                     │
    │                  (embedding ⊕ known_other_targets ⊕ imputed)   │
-   └── Component E: physics aux heads (Δ_egb, egc−(ei−eea), eps−nc²)│
+   └── Component E: physics residuals (in loss, not separate heads) │
                                                                     ▼
    Component F: fold-safe per-target blend
-        candidates = {specialist, stack, gnn, v11_blend, physics-imputed}
+        candidates = {specialist, specialist_no_leakage, leakage_only,
+                      stack, gnn, v11_blend, physics-imputed}
         weights tuned on other folds → apply to held-out fold
                                                                     ▼
    submission.csv (physics bounds enforced)
@@ -105,19 +106,38 @@ keeps all rows of a polymer in one fold, so this is clean). Test-row features us
 full-train pivot (92% small-five coverage). Missing values → target-wise train mean +
 boolean `known_{target}` mask. No train-label leakage into OOF.
 
+**Coverage asymmetry (measured):** train has only **6%** multi-labeled polymers
+(415/6565); test has **92%** small-five coverage. So learned leakage features are rarely
+seen in training — the model must learn to exploit them from just 415 rows, and the
+**physics-imputed candidate (no training needed)** carries most of the leak-exploitation
+load at test time. The learned leakage features are a secondary, additive signal.
+
 **Component C — small-five heads:** input `[embedding, known_other_targets (filled),
 physics_imputed]`, MLP heads (one per small target: eps, nc, ei, eea, egb). The model
 learns to use leakage features where present and ignore them where absent (they become
-train means).
+train means). **Also produced: `specialist_no_leakage`** — the same heads fed the
+embedding only, so the blend can downweight leakage-fed predictions on the ~8% of
+non-leaked small-test rows.
 
 **Component D — big-two heads:** input `embedding` only (tg/egc are 0.3–5% leaked, no
 leakage features).
 
-**Component E — physics consistency:** three auxiliary MSE losses on the shared embedding:
-`Δ_egb` (learned bulk-gap offset), `egc−(ei−eea)`, `eps−nc²`. Trained on the 415
-multi-labeled train polymers. Soft regularizers only — no inference-time penalty.
+**Component E — physics residuals (direct losses, no extra heads):**
+`physics_loss = mse(pred_egc, pred_ei − pred_eea) + mse(pred_eps, pred_nc²) +
+mse(pred_egb, pred_egc − Δ)` where Δ is a single learned scalar. Applied only on rows
+where all involved labels are known — sample counts are tiny: 10 / 134 / 82 polymers —
+so the total weight is **0.05–0.1** (guide, not dominate). No separate auxiliary
+networks, no inference-time penalty.
 
-**Component F — blend:** per-target fold-safe weight search over the five candidates,
+**Leakage-only baseline (required ablation, run before the specialist):** a CatBoost /
+LightGBM per small target using only `{known other targets, physics imputations}` — no
+trunk, no neural net. **Measured expectation (fold-safe):** R² eps 0.51, nc 0.62, ei
+0.34, eea 0.45, egb 0.58 — *below* the v11 blend per-target, so it is an additive blend
+candidate, not a replacement. It also diagnoses how much of the gain is information
+transfer vs. representation learning. Runs in minutes on the 415-row multi-labeled set.
+
+**Component F — blend:** per-target fold-safe weight search over the **seven candidates**
+{specialist, specialist_no_leakage, leakage_only, stack, gnn, v11_blend, physics-imputed},
 exactly the v11/v12 protocol (tune on other folds, apply to held-out). Imputed candidate
 carries weight where coverage is strong (eea, ei, egc); for tg/egc specialist+stack
 dominate. Guaranteed floor: weight search can pick the incumbent candidate.
@@ -126,41 +146,46 @@ dominate. Guaranteed floor: weight search can pick the incumbent candidate.
 
 - Multi-task loss: weighted per-target MSE `[tg:1, egc:1, egb:1.5, eps:3, nc:2.5, ei:3,
   eea:2]` — small five weighted up ~2–3× so they get enough gradient despite 220 vs
-  4143 rows.
+  4143 rows. **Physics residuals added at total weight 0.05–0.1** (Component E), so they
+  guide the small-five heads without dominating the tiny labeled subsets.
 - Optimizer: AdamW, `lr=3e-4`, batch 128. 10-fold GroupKFold, same seed/protocol as
   v11/v12 → honest OOF.
 - Smoke flags inherited from v12: `SMOKE=1 → 3 epochs, 1 pretrain epoch, 2000-row cap` so
   the smoke run finishes in < ~15 min on the cached path and validates the full notebook
   end-to-end without a Kaggle GPU run.
 - Test-time: full-train pivot for leakage features; `specialist_oof` + `specialist_test`
-  feed the blend.
+  feed the blend. The leakage-only baseline runs before the specialist to set the
+  information-transfer expectation.
 
 ## 5. Data flow
 
 1. Canonicalize SMILES (strip `*`/`[*]`), dedup by `smiles+target_type`, GroupKFold.
 2. Build per-fold leakage pivot + physics imputation tables.
-3. Train multi-task specialist (Components A–E).
-4. Produce specialist OOF + test preds.
-5. Fold-safe per-target blend (Component F) over the five candidates.
+3. Run the **leakage-only baseline** (CatBoost/LGBM per small target) → ablation CSVs,
+   sets the information-transfer expectation.
+4. Train multi-task specialist (Components A–E) → specialist_oof/test + specialist_no_leakage.
+5. Fold-safe per-target blend (Component F) over the seven candidates.
 6. `USE_SPECIALIST` decision; submission with physics bounds (egc/egb/ei ≥ 0, eps ≥ 1,
    nc ∈ [1,3]).
 
 ## 6. Error handling
 
 - GINE checkpoint missing → specialist skipped, blend falls back to `{stack, v11,
-  imputed}`. Never a crash, never a NaN submission.
-- A fold with insufficient multi-labeled polymers for physics heads → those auxiliary
-  losses are masked for that fold (not skipped globally).
+  imputed, leakage_only}`. Never a crash, never a NaN submission.
+- A fold with insufficient multi-labeled polymers for physics residuals → those
+  residuals are masked for that fold (not skipped globally).
 - `SMOKE=1` → all heavy loops capped; full pipeline must complete end-to-end.
 
 ## 7. Testing (extend the v12 suite)
 
 - Source markers: multi-task trunk + 7 heads present; leakage features built from
-  other-fold pivot only; physics imputation correctness (egc=ei−eea, eps=nc², egb=egc−Δ);
-  blend candidate list includes specialist + imputed; no trained gate (`\bgate\b`
+  other-fold pivot only; physics residual losses in training loss (egc=ei−eea, eps=nc²,
+  egb=egc−Δ) at total weight ≤ 0.1; blend candidate list includes specialist,
+  specialist_no_leakage, leakage_only + imputed; no trained gate (`\bgate\b`
   word-boundary regex); submission physics bounds; per-cell `ast.parse` compile.
 - New tests: leakage-pivot fold-safety (no same-fold label in features), physics-impute
-  R² sanity on multi-labeled polymers, blend-candidate list, USE_SPECIALIST fallback.
+  R² sanity on multi-labeled polymers, blend-candidate list (≥7 candidates),
+  leakage-only baseline runs before specialist, USE_SPECIALIST fallback.
 - Smoke run must pass end-to-end on cached experts (validates notebook before Kaggle).
 
 ## 8. Deliverables
