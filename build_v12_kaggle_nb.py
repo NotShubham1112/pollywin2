@@ -165,6 +165,126 @@ dedup["fold"] = folds
 print(dedup.groupby(["target_type","fold"]).size().unstack(fill_value=0).to_string())
 """)
 
+# =====================================================================
+M("## 2. Feature factory (v8 Layer 2 — RDKit descriptors + fingerprints + polymer-physics + fragments)")
+
+# =====================================================================
+P("""DESC_NAMES = [d[0] for d in Descriptors.descList]
+
+def rdkit_desc(mol):
+    try:
+        return list(Descriptors.CalcMolDescriptors(mol).values())
+    except Exception:
+        return [np.nan] * len(DESC_NAMES)
+
+_GEN_M2 = GetMorganGenerator(radius=2, fpSize=2048)
+_GEN_M1 = GetMorganGenerator(radius=1, fpSize=1024)
+
+def _fps(mol):
+    m2 = np.array(_GEN_M2.GetFingerprint(mol), dtype=np.float32)
+    m1 = np.array(_GEN_M1.GetFingerprint(mol), dtype=np.float32)
+    mc = np.array(MACCSkeys.GenMACCSKeys(mol), dtype=np.float32)
+    return np.concatenate([m1, m2, mc])
+
+def polymer_physics(mol):
+    if mol is None:
+        return np.zeros(15)
+    arom = sum(1 for a in mol.GetAtoms() if a.GetIsAromatic())
+    heavy = mol.GetNumHeavyAtoms()
+    rings = rdMolDescriptors.CalcNumRings(mol)
+    rot = rdMolDescriptors.CalcNumRotatableBonds(mol)
+    na = mol.GetNumAtoms()
+    nC = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="C")
+    nS = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="S")
+    nF = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="F")
+    nSi = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="Si")
+    nCl = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="Cl")
+    nBr = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="Br")
+    nN = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="N")
+    nO = sum(1 for a in mol.GetAtoms() if a.GetSymbol()=="O")
+    nHal = nF + nCl + nBr
+    conj = arom + sum(1 for b in mol.GetBonds() if b.GetBondTypeAsDouble()==2.0)
+    return np.array([
+        arom / max(heavy,1),              # aromatic ratio
+        rings / max(heavy,1),             # ring density
+        rings,                             # ring count
+        1.0 - rot / max(heavy,1),          # rigidity score
+        rot / max(heavy,1),                # flexibility score
+        nHal / max(heavy,1),               # halogen density
+        nS / max(heavy,1),                 # sulfur density
+        nN / max(heavy,1),                 # nitrogen density
+        nO / max(heavy,1),                 # oxygen density
+        (nN + nO) / max(heavy,1),          # hetero density
+        conj / max(heavy,1),               # conjugation score
+        rdMolDescriptors.CalcNumHBD(mol)/max(heavy,1),   # H-bond donor density
+        rdMolDescriptors.CalcNumHBA(mol)/max(heavy,1),   # H-bond acceptor density
+        Descriptors.MolLogP(mol),          # logP
+        Descriptors.MolMR(mol)/max(heavy,1)              # molar refractivity density
+    ], dtype=np.float32)
+
+POLY_NAMES = ["arom_ratio","ring_density","ring_count","rigidity","flexibility","halogen_density",
+              "sulfur_density","nitrogen_density","oxygen_density","hetero_density",
+              "conjugation","hbd_density","hba_density","logp","mr_density"]
+
+FRAGMENTS = ["C(=O)O", "C(=O)N", "C(=O)NC(=O)", "C-O-C", "c1ccccc1", "c1csc", "F", "C#N",
+             "S(=O)(=O)", "C=O", "C=C", "c1ccncc1", "N=C=O", "OC(=O)", "NC(=O)", "c1ccc2", "CC(C)C"]
+FRAG_NAMES = ["ester","amide","imide","ether","benzene","thiophene","fluoro","nitrile",
+              "sulfone","carbonyl","alkene","pyridine","isocyanate","carboxyl","amid_link","fused_ring","isopropyl"]
+def fragment_vec(mol):
+    if mol is None:
+        return np.zeros(len(FRAGMENTS), dtype=np.float32)
+    s = Chem.MolToSmiles(mol)
+    return np.array([1.0 if f in s else 0.0 for f in FRAGMENTS], dtype=np.float32)
+
+def build_features(smiles_list, canon_list=None):
+    rows_d, rows_f, rows_p, rows_r = [], [], [], []
+    ok = []
+    for smi in smiles_list:
+        m = parse_mol(smi)
+        if m is None:
+            rows_d.append(np.zeros(len(DESC_NAMES))); rows_f.append(np.zeros(1024+2048+167))
+            rows_p.append(np.zeros(15)); rows_r.append(np.zeros(len(FRAGMENTS))); ok.append(False)
+            continue
+        rows_d.append(rdkit_desc(m)); rows_f.append(_fps(m))
+        rows_p.append(polymer_physics(m)); rows_r.append(fragment_vec(m)); ok.append(True)
+    D = pd.DataFrame(np.array(rows_d, dtype=np.float64), columns=DESC_NAMES)
+    F = pd.DataFrame(np.array(rows_f, dtype=np.float32),
+                     columns=[f"fp_{i}" for i in range(np.array(rows_f).shape[1])])
+    P_ = pd.DataFrame(np.array(rows_p, dtype=np.float32), columns=POLY_NAMES)
+    R_ = pd.DataFrame(np.array(rows_r, dtype=np.float32), columns=[f"frag_{n}" for n in FRAG_NAMES])
+    X = pd.concat([D, F, P_, R_], axis=1)
+    return X, np.array(ok, dtype=bool)
+
+print("Building features on train...")
+t0 = time.time()
+Xtr, ok_tr = build_features(dedup["smiles"].tolist())
+print(f"train features {Xtr.shape} in {time.time()-t0:.0f}s, parse-ok {ok_tr.mean():.1%}")
+
+print("Building features on test...")
+t0 = time.time()
+Xte, ok_te = build_features(test["smiles"].tolist())
+print(f"test features {Xte.shape} in {time.time()-t0:.0f}s, parse-ok {ok_te.mean():.1%}")
+""")
+
+P("""# ---- cleaning: winsorize, drop constant, impute median ----
+X_all = pd.concat([Xtr, Xte], axis=0).reset_index(drop=True)
+X_all = X_all.replace([np.inf, -np.inf], np.nan)
+const_cols = [c for c in X_all.columns if X_all[c].nunique() <= 1]
+X_all = X_all.drop(columns=const_cols)
+for c in X_all.columns:
+    lo, hi = X_all[c].quantile(0.001), X_all[c].quantile(0.999)
+    X_all[c] = X_all[c].clip(lo, hi)
+med = X_all.median()
+X_all = X_all.fillna(med).replace([np.inf, -np.inf], 0.0)
+Xtr = X_all.iloc[:len(dedup)].reset_index(drop=True)
+Xte = X_all.iloc[len(dedup):].reset_index(drop=True)
+print("after cleaning:", Xtr.shape, Xte.shape, "| dropped const cols:", len(const_cols))
+Xtr.to_pickle(os.path.join(WORK, "Xtr.pkl"))
+Xte.to_pickle(os.path.join(WORK, "Xte.pkl"))
+dedup.to_pickle(os.path.join(WORK, "dedup.pkl"))
+test.to_pickle(os.path.join(WORK, "test.pkl"))
+""")
+
 nb.cells = C
 nbf.write(nb, OUT)
 print("wrote", OUT, "with", len(C), "cells")

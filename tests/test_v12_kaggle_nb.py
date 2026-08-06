@@ -38,6 +38,16 @@ def test_v12_bootstrap_flags_and_pkgs():
     assert "def find_input(base, name):" in code
     assert "def parse_mol(smiles):" in code
 
+def test_v12_feature_factory():
+    code, _ = _build()
+    assert "DESC_NAMES = [d[0] for d in Descriptors.descList]" in code
+    assert "def polymer_physics(mol):" in code
+    assert "def build_features(smiles_list, canon_list=None):" in code
+    assert 'Xtr, ok_tr = build_features(dedup["smiles"].tolist())' in code
+    assert 'Xtr.to_pickle(os.path.join(WORK, "Xtr.pkl"))' in code
+    assert "X_all = X_all.replace([np.inf, -np.inf], np.nan)" in code
+    assert '"ring_count","rigidity","flexibility","halogen_density"' in code
+
 if __name__ == "__main__":
     import traceback
     failed = 0
