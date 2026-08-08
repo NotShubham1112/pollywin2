@@ -109,6 +109,25 @@ gain was measured to not exist, and no other candidate clears cost/risk. This is
 evidence-based justification for freezing P14 (0.883) as final and not spending
 submission slots on blend tuning.
 
+### §5 addendum (2026-08-08, v16 cross-target decoder) — FAIL at the LB
+
+The last pre-registered experiment (v16, `docs/superpowers/specs/2026-08-08-v16-cross-target-decoder-design.md`)
+added a fold-safe Cross-Target Decoder: a physics-imputed arm (egc=ei−eea; egb=f(egc);
+eps=f(nc)) plus a learned per-target Ridge over the 6 sibling targets, widening P14's
+Ridge blend to 4 arms. Only train labels were used; all decoder fits were GroupKFold-safe.
+
+- **Offline gate (pre-registered, on the run's `blend_oof_test16.npz`, arms-covered 1297 rows): PASS**
+  small-five weighted gain **+0.0118** (≥ +0.003), worst target delta **−0.0016** (> −0.003).
+- **Public LB: 0.874 vs P14 0.883** (honest bar 0.886) — **the gate's offline signal did not
+  transfer to the leaderboard.** Arms contributed positive weight at runtime on only some
+  targets (w_PH>0 on egb/eps; w_LEARN>0 except eps −0.1), but the full-submission effect
+  regressed.
+- **Verdict: v16 FAIL → P14 (0.883) stays production; the single v16 slot is spent.**
+- Lesson: at this scale the multi-labeled subset is only 1297/7409 rows; a +0.01 gain there
+  is a small-sample artifact and does not survive to the full public set. Cross-target
+  decoder arms are not worth further slots.
+- **Final state: P14 (0.883) remains the frozen production submission.**
+
 ## 6. Recommendation for the future
 
 - Submit P14 (0.883) as the final answer wherever allowed; keep it frozen as production.

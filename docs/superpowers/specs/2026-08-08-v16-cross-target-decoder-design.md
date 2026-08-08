@@ -116,5 +116,18 @@ construction.
 
 ## 5. Result
 
-Empty (pre-registration). Fill in after the Kaggle run — only the numbers from the run,
-no post-hoc editing of the gates in §3.
+- Kernel: `shubhamkambli11/polywin-r2-v16-cross-target-decoder` (private, notebook, GPU+Internet).
+- Gate (offline, on arms-covered 1297 rows from the run's `blend_oof_test16.npz`):
+  - small-five weighted gain **+0.0118** (need ≥ +0.003) — PASS
+  - worst per-target delta **−0.0016** (need > −0.003) — PASS
+  - per-target deltas: eea −0.0016, egb +0.0092, egc +0.0005, ei +0.0155, eps +0.0190, nc +0.0169, tg +0.0028.
+  - Gate verdict: PASS → submitted v16.
+- Public LB: **0.874** (vs P14 0.883, honest bar 0.886). **LB does NOT confirm the offline gate.**
+- Arms at runtime (`v16_blend_report.csv`): learned arm weighted (w_LEARN) positive on all targets
+  except eps (−0.1); physics arm (w_PH) positive on egb/eps only, ~0 elsewhere.
+- **Decision: FAIL → P14 (0.883) stays production. v16 does not supersede.** Offline +0.0118 on the
+  multi-labeled subset did not transfer to the full public LB, and the single v16 slot is spent.
+- Lesson recorded in `docs/lab-postmortem-2026-08-08.md` §5: cross-target arms over-fit the
+  multi-labeled subset (1297 rows); promise offline does not guarantee public LB at this scale.
+
+No post-hoc edits to §3 gates beyond recording the run's numbers above.
