@@ -1,0 +1,19 @@
+{
+    "competition_sources":  [
+                                "ppp-round-2"
+                            ],
+    "id":  "shubhamkambli11/polywin-r2-v13-multiseed",
+    "enable_gpu":  true,
+    "kernel_type":  "notebook",
+    "dataset_sources":  [
+
+                        ],
+    "is_private":  true,
+    "model_sources":  [
+
+                      ],
+    "enable_internet":  true,
+    "language":  "python",
+    "title":  "polywin r2 v13 multiseed",
+    "code_file":  "PolyWin_R2_v13_gbm_gnn_blend.ipynb"
+}

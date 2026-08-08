@@ -27,8 +27,17 @@ OUT_NB = "PolyWin_R2_v13_gbm_gnn_blend.ipynb"
 with open(SRC, encoding="utf-8") as f:
     L = f.read().split("\n")
 
-CORE_A = "\n".join(L[99:246])   # source lines 100-246: graph feats + GINE + MTGNN
-CORE_B = "\n".join(L[246:487])  # source lines 247-487: twins + MT-GNN fold + GBM stack
+def _idx(marker):
+    for i, line in enumerate(L):
+        if marker in line:
+            return i
+    raise SystemExit("marker not found: " + marker)
+
+_A_START = _idx("# Graph featurization")
+_A_END = _idx("# Twin source:")
+_B_END = _idx("    stack_oof[t] = oof; stack_test[t] = te_pred") + 1
+CORE_A = "\n".join(L[_A_START:_A_END])
+CORE_B = "\n".join(L[_A_END:_B_END])
 assert "class GINEEncoder" in CORE_A
 assert "class MTGNN" in CORE_A
 assert "lgb_test_te = np.zeros((len(Xte), len(TARGETS)), dtype=np.float32)" in CORE_B
@@ -42,6 +51,7 @@ REPL = {
     "@PRTEP@": "1" if SMOKE else "5",
     "@PRTSMP@": "2000" if SMOKE else "20000",
     "@SUFFIX@": "_smoke" if SMOKE else "",
+    "@GNNSEEDS@": _os.environ.get("GNN_SEEDS", "1" if SMOKE else "42,999,2025"),
 }
 
 nb = nbf.v4.new_notebook()
@@ -144,6 +154,9 @@ from catboost import CatBoostRegressor
 
 SMOKE = os.environ.get("SMOKE", "0") == "1"
 SEED = 42
+GNN_SEEDS = os.environ.get("GNN_SEEDS", "@GNNSEEDS@")
+os.environ["GNN_SEEDS"] = GNN_SEEDS
+print("GNN_SEEDS =", GNN_SEEDS, flush=True)
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
 def _cuda_ok():
     if not torch.cuda.is_available():
@@ -413,9 +426,9 @@ M("## 4. Level-0 predictions (verbatim: leak-safe twins + MT-GNN fold OOF + GBM 
 
 P(CORE_B)
 
-M("## 5. v13 blend — per-target Ridge(alpha=1.0) on [GBM, MT-GNN] OOF + submission")
+M("## 5. v13 blend — per-target Ridge (OOF-tuned alpha) on [GBM, MT-GNN] OOF + submission")
 
-P(r"""ALPHA = 1.0
+P(r"""ALPHA_GRID = [0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0]
 
 oof_gbm_global = np.full(len(X), np.nan, dtype=np.float32)
 oof_mt_global = np.full(len(X), np.nan, dtype=np.float32)
@@ -438,18 +451,30 @@ for t in TARGETS:
     c = np.corrcoef(oof_gbm_global[idx], oof_mt_global[idx])[0, 1]
     print(f"  {t:<4} corr={c:.4f}", flush=True)
 
-print("\n=== building v13 blend (per-target Ridge, alpha=1.0) ===", flush=True)
+print("\n=== tuning per-target Ridge alpha (OOF-selected) ===", flush=True)
 rows = []
 coefs = {t: [] for t in TARGETS}
+best_a = {}
 final_te = np.zeros(len(tef))
 for t in TARGETS:
     idx = idx_of_target[t]
     yt = Y[idx].astype(np.float64)
     Mx = np.column_stack([oof_gbm_global[idx], oof_mt_global[idx]])
     Mte = np.column_stack([test_gbm_global, test_mt_global])
+    # 1) pick alpha by OOF R2 (nested, fold-safe)
+    cv = list(GroupKFold(n_splits=GLOBAL_FOLDS).split(Mx, yt, G[idx]))
+    oof_r2 = {}
+    for a in ALPHA_GRID:
+        o = np.zeros(len(idx))
+        for trk, vk in cv:
+            o[vk] = Ridge(alpha=a).fit(Mx[trk], yt[trk]).predict(Mx[vk])
+        oof_r2[a] = r2_score(yt, o)
+    a_best = max(oof_r2, key=oof_r2.get)
+    best_a[t] = a_best
+    # 2) final OOF (for report) + test bag with the chosen alpha
     oof = np.zeros(len(idx)); te_pred = np.zeros(len(tef))
-    for trk, vk in GroupKFold(n_splits=GLOBAL_FOLDS).split(Mx, yt, G[idx]):
-        lr = Ridge(alpha=1.0); lr.fit(Mx[trk], yt[trk])
+    for trk, vk in cv:
+        lr = Ridge(alpha=a_best); lr.fit(Mx[trk], yt[trk])
         oof[vk] = lr.predict(Mx[vk])
         te_pred += lr.predict(Mte) / GLOBAL_FOLDS
         coefs[t].append(lr.coef_.tolist())
@@ -457,8 +482,17 @@ for t in TARGETS:
     final_te[m_te] = te_pred[m_te]
     r_blend = r2_score(yt, oof); r_g = r2_score(yt, oof_gbm_global[idx]); r_m = r2_score(yt, oof_mt_global[idx])
     cb = np.mean(coefs[t], axis=0)
-    rows.append(dict(target=t, blend=r_blend, GBM=r_g, GNN=r_m, w_GBM=cb[0], w_GNN=cb[1]))
-    print(f"  {t:<4} blend={r_blend:.4f} GBM={r_g:.4f} GNN={r_m:.4f} w_GBM={cb[0]:.3f} w_GNN={cb[1]:.3f}", flush=True)
+    rows.append(dict(target=t, alpha=float(a_best), blend=r_blend, GBM=r_g, GNN=r_m,
+                     w_GBM=cb[0], w_GNN=cb[1]))
+    print(f"  {t:<4} alpha={a_best:<6} blend={r_blend:.4f} GBM={r_g:.4f} GNN={r_m:.4f} "
+          f"w_GBM={cb[0]:.3f} w_GNN={cb[1]:.3f}", flush=True)
+
+# persist fold OOF / test preds so offline blend experiments don't rerun the GNN
+np.savez(os.path.join(OUT, "blend_oof_test.npz"),
+         oof_gbm=oof_gbm_global, oof_mt=oof_mt_global,
+         test_gbm=test_gbm_global, test_mt=test_mt_global,
+         y_all=Y.astype(np.float64), g_all=G.astype(str), t_all=T.astype(str))
+print("wrote blend_oof_test.npz", flush=True)
 
 df = pd.DataFrame(rows).set_index("target")
 print("\n=== summary ===", flush=True)
@@ -469,7 +503,7 @@ print("  mean blend=%.4f | GBM=%.4f | GNN=%.4f | delta-vs-GBM %+.4f" % (
 print("\n=== Check 2: blend weights (small targets should lean GNN) ===", flush=True)
 for t in TARGETS:
     cb = np.mean(coefs[t], axis=0)
-    print(f"  {t:<4} w_GBM={cb[0]:.3f} w_GNN={cb[1]:.3f} GNN_share={cb[1]/(cb.sum()):.2f}", flush=True)
+    print(f"  {t:<4} alpha={best_a[t]:.2f} w_GBM={cb[0]:.3f} w_GNN={cb[1]:.3f} GNN_share={cb[1]/(cb.sum()):.2f}", flush=True)
 
 sub = pd.DataFrame({"id": tef["id"].values, "target": final_te})
 sub_path = os.path.join(OUT, "submission_v13.csv")

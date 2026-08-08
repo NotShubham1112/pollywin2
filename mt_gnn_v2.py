@@ -340,98 +340,118 @@ pretrained_state = torch.load(PRETRAINED, map_location="cpu") if os.path.exists(
 if pretrained_state is not None:
     print("loaded pretrained_encoder.pt", flush=True)
 
-n_twin = twin_train.shape[1]
-mt_oof_all = np.full(len(X), np.nan, dtype=np.float32)
-mt_test_folds = np.zeros((len(Xte), GLOBAL_FOLDS), dtype=np.float32)
-for f, (tr_idx, va_idx) in enumerate(GroupKFold(n_splits=GLOBAL_FOLDS).split(
-        Xs, Y, G)):
-    t0f = time.time()
-    stats = {}
-    y_norm = np.empty(len(tr_idx), dtype=np.float32)
-    for t in TARGETS:
-        mask = (T[tr_idx] == t)
-        if mask.sum() > 0:
-            mu, sd = Y[tr_idx][mask].mean(), Y[tr_idx][mask].std() + 1e-6
-            stats[t] = (mu, sd)
-            y_norm[mask] = (Y[tr_idx][mask] - mu) / sd
-    fit_ids, ho_ids = early_split(tr_idx)
-    model = MTGNN(N_ATOM_FEATS, N_BOND_FEATS, n_twin=n_twin).to(DEVICE)
-    if pretrained_state is not None:
-        model.load_encoder(pretrained_state)
-    opt = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
-    pos_of = {int(o): p for p, o in enumerate(tr_idx)}
-    pos_of_all = {int(o): p for p, o in enumerate(tr_idx)}
+GNN_SEEDS = [int(s) for s in os.environ.get("GNN_SEEDS", "42").split(",") if s.strip()]
 
-    def predict_ids(ids, m=model):
-        m.eval()
-        out = np.empty(len(ids), dtype=np.float32)
-        with torch.no_grad():
-            for i in range(0, len(ids), 256):
-                bi = ids[i:i + 256]
+
+def run_gnn_seed(seed):
+    """One seed's MT-GNN: fold-safe GroupKFold OOF + fold-bagged test preds.
+    Returns (mt_oof_all, mt_test) in raw scale. Identical math to the v13 run
+    except torch/np/random seeding are reset per seed."""
+    torch.manual_seed(seed); np.random.seed(seed); random.seed(seed)
+    n_twin = twin_train.shape[1]
+    mt_oof_all = np.full(len(X), np.nan, dtype=np.float32)
+    mt_test_folds = np.zeros((len(Xte), GLOBAL_FOLDS), dtype=np.float32)
+    for f, (tr_idx, va_idx) in enumerate(GroupKFold(n_splits=GLOBAL_FOLDS).split(
+            Xs, Y, G)):
+        t0f = time.time()
+        stats = {}
+        y_norm = np.empty(len(tr_idx), dtype=np.float32)
+        for t in TARGETS:
+            mask = (T[tr_idx] == t)
+            if mask.sum() > 0:
+                mu, sd = Y[tr_idx][mask].mean(), Y[tr_idx][mask].std() + 1e-6
+                stats[t] = (mu, sd)
+                y_norm[mask] = (Y[tr_idx][mask] - mu) / sd
+        fit_ids, ho_ids = early_split(tr_idx)
+        model = MTGNN(N_ATOM_FEATS, N_BOND_FEATS, n_twin=n_twin).to(DEVICE)
+        if pretrained_state is not None:
+            model.load_encoder(pretrained_state)
+        opt = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
+        pos_of = {int(o): p for p, o in enumerate(tr_idx)}
+        pos_of_all = {int(o): p for p, o in enumerate(tr_idx)}
+
+        def predict_ids(ids, m=model):
+            m.eval()
+            out = np.empty(len(ids), dtype=np.float32)
+            with torch.no_grad():
+                for i in range(0, len(ids), 256):
+                    bi = ids[i:i + 256]
+                    graphs = [row_to_graph[int(b)] for b in bi]
+                    batch = to_pyg(graphs).to(DEVICE)
+                    twin = torch.tensor(twin_train[bi], dtype=torch.float)
+                    p = m(batch, twin=twin).cpu().numpy()
+                    for j, b in enumerate(bi):
+                        ti = TARGET_IDX[T[b]]
+                        mu, sd = stats[T[b]]
+                        out[i + j] = p[j, ti] * sd + mu
+            return out
+
+        best, best_r2, pat = None, -np.inf, 0
+        for ep in range(MAX_EPOCHS):
+            model.train()
+            perm = np.random.permutation(len(fit_ids))
+            for i in range(0, len(perm), BS):
+                bi = fit_ids[perm[i:i + BS]]
+                idxs = [pos_of_all[int(b)] for b in bi]
+                yb = torch.tensor(y_norm[idxs]).unsqueeze(1).to(DEVICE)
+                wb = torch.tensor([row_to_graph[int(b)].w.item() for b in bi],
+                                  dtype=torch.float).unsqueeze(1).to(DEVICE)
                 graphs = [row_to_graph[int(b)] for b in bi]
                 batch = to_pyg(graphs).to(DEVICE)
                 twin = torch.tensor(twin_train[bi], dtype=torch.float)
-                p = m(batch, twin=twin).cpu().numpy()
+                opt.zero_grad()
+                pred = model(batch, twin=twin)
+                ti = torch.tensor([TARGET_IDX[T[b]] for b in bi], device=DEVICE)
+                pred_sel = pred.gather(1, ti.unsqueeze(1))
+                loss = (F.mse_loss(pred_sel, yb, reduction="none") * wb).mean()
+                loss.backward(); opt.step()
+            hp = predict_ids(ho_ids)
+            hr = r2_score(Y[ho_ids], hp)
+            if hr > best_r2:
+                best_r2 = hr
+                best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+                pat = 0
+            else:
+                pat += 1
+                if pat >= PATIENCE:
+                    break
+        model.load_state_dict(best)
+        mt_oof_all[va_idx] = predict_ids(va_idx)
+        # test prediction via graphs
+        model.eval()
+        with torch.no_grad():
+            te_pred = np.zeros(len(Xte), dtype=np.float32)
+            for i in range(0, len(Xte), 256):
+                bi = np.arange(i, min(i + 256, len(Xte)))
+                graphs = [test_graphs[int(b)] for b in bi]
+                batch = to_pyg(graphs).to(DEVICE)
+                twin = torch.tensor(twin_test[bi], dtype=torch.float)
+                p = model(batch, twin=twin).cpu().numpy()
                 for j, b in enumerate(bi):
-                    ti = TARGET_IDX[T[b]]
-                    mu, sd = stats[T[b]]
-                    out[i + j] = p[j, ti] * sd + mu
-        return out
+                    ttt = tef["target_type"].iloc[int(b)]
+                    ti = TARGET_IDX[ttt]
+                    mu, sd = stats[ttt]
+                    te_pred[i + j] = p[j, ti] * sd + mu
+        mt_test_folds[:, f] = te_pred
+        print(f"seed {seed}  fold {f}: holdout R2={best_r2:.4f} ({time.time()-t0f:.0f}s)", flush=True)
+        del model; gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
-    best, best_r2, pat = None, -np.inf, 0
-    for ep in range(MAX_EPOCHS):
-        model.train()
-        perm = np.random.permutation(len(fit_ids))
-        for i in range(0, len(perm), BS):
-            bi = fit_ids[perm[i:i + BS]]
-            idxs = [pos_of_all[int(b)] for b in bi]
-            yb = torch.tensor(y_norm[idxs]).unsqueeze(1).to(DEVICE)
-            wb = torch.tensor([row_to_graph[int(b)].w.item() for b in bi],
-                              dtype=torch.float).unsqueeze(1).to(DEVICE)
-            graphs = [row_to_graph[int(b)] for b in bi]
-            batch = to_pyg(graphs).to(DEVICE)
-            twin = torch.tensor(twin_train[bi], dtype=torch.float)
-            opt.zero_grad()
-            pred = model(batch, twin=twin)
-            ti = torch.tensor([TARGET_IDX[T[b]] for b in bi], device=DEVICE)
-            pred_sel = pred.gather(1, ti.unsqueeze(1))
-            loss = (F.mse_loss(pred_sel, yb, reduction="none") * wb).mean()
-            loss.backward(); opt.step()
-        hp = predict_ids(ho_ids)
-        hr = r2_score(Y[ho_ids], hp)
-        if hr > best_r2:
-            best_r2 = hr
-            best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-            pat = 0
-        else:
-            pat += 1
-            if pat >= PATIENCE:
-                break
-    model.load_state_dict(best)
-    mt_oof_all[va_idx] = predict_ids(va_idx)
-    # test prediction via graphs
-    model.eval()
-    with torch.no_grad():
-        te_pred = np.zeros(len(Xte), dtype=np.float32)
-        for i in range(0, len(Xte), 256):
-            bi = np.arange(i, min(i + 256, len(Xte)))
-            graphs = [test_graphs[int(b)] for b in bi]
-            batch = to_pyg(graphs).to(DEVICE)
-            twin = torch.tensor(twin_test[bi], dtype=torch.float)
-            p = model(batch, twin=twin).cpu().numpy()
-            for j, b in enumerate(bi):
-                ttt = tef["target_type"].iloc[int(b)]
-                ti = TARGET_IDX[ttt]
-                mu, sd = stats[ttt]
-                te_pred[i + j] = p[j, ti] * sd + mu
-    mt_test_folds[:, f] = te_pred
-    print(f"  fold {f}: holdout R2={best_r2:.4f} ({time.time()-t0f:.0f}s)", flush=True)
-    del model; gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    assert not np.isnan(mt_oof_all).any()
+    return mt_oof_all, mt_test_folds.mean(axis=1)
 
+
+print("GNN_SEEDS =", GNN_SEEDS, flush=True)
+mt_oof_sum = np.zeros(len(X), dtype=np.float32)
+mt_test_sum = np.zeros(len(Xte), dtype=np.float32)
+for _gs in GNN_SEEDS:
+    _oo, _mt = run_gnn_seed(_gs)
+    mt_oof_sum += _oo
+    mt_test_sum += _mt
+mt_oof_all = mt_oof_sum / len(GNN_SEEDS)
+mt_test = mt_test_sum / len(GNN_SEEDS)
 assert not np.isnan(mt_oof_all).any()
-mt_test = mt_test_folds.mean(axis=1)
 
 mt_oof = {t: mt_oof_all[idx_of_target[t]] for t in TARGETS}
 
