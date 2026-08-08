@@ -23,3 +23,11 @@ vault/pipeline_out_v13_smoke/Xte.pkl
 PolyWin_R2_v14_smoke_executed.ipynb
 vault/kernel-v14-p1m/
 vault/pipeline_out_v14_smoke/
+
+# v15 smoke/executed artifacts (regenerable)
+vault/pipeline_out_v15_smoke/
+PolyWin_R2_v15_smoke_executed.ipynb
+
+
+vault/kernel-v15-epsnc-focus/
+
