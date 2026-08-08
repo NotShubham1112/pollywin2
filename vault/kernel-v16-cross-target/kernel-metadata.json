@@ -1,0 +1,7 @@
+{"competition_sources":["ppp-round-2"],
+ "id":"shubhamkambli11/polywin-r16-cross-target-decoder",
+ "enable_gpu":true,"kernel_type":"notebook","dataset_sources":[],
+ "is_private":true,"model_sources":[],
+ "enable_internet":true,"language":"python",
+ "title":"polywin r2 v16 cross target decoder",
+ "code_file":"PolyWin_R2_v16_cross_target_decoder.ipynb"}
