@@ -186,13 +186,28 @@ def learned_arm(canon_tr, tgt_tr, Y_tr, pivot, canon_te, global_folds=GLOBAL_FOL
             fit_ok = g_trk[ok_tr[g_trk]]
             if len(fit_ok) < 1:
                 continue
-            sc = StandardScaler().fit(Ftr[fit_ok])
-            m = Ridge(alpha=alpha).fit(sc.transform(Ftr[fit_ok]), Y_tr[fit_ok])
+            # mean-impute the sibling columns on the training fold only
+            # (fold-safe: val/test NaNs never influence the fit), drop
+            # columns that are entirely NaN in this fold, then Ridge.
+            Xf = Ftr[fit_ok].copy()
+            fcol = np.isfinite(Xf).sum(axis=0) > 0
+            Xf = Xf[:, fcol]
+            if Xf.shape[1] < 1:
+                continue
+            colmean = np.nanmean(Xf, axis=0)
+            colmean = np.where(np.isfinite(colmean), colmean, 0.0)
+            Xf = np.where(np.isfinite(Xf), Xf, colmean)
+            sc = StandardScaler().fit(Xf)
+            m = Ridge(alpha=alpha).fit(sc.transform(Xf), Y_tr[fit_ok])
             vok = g_vk[ok_tr[g_vk]]
             if len(vok) > 0:
-                lo_tr[vok, ti] = m.predict(sc.transform(Ftr[vok]))
+                Xv = Ftr[vok][:, fcol].copy()
+                Xv = np.where(np.isfinite(Xv), Xv, colmean)
+                lo_tr[vok, ti] = m.predict(sc.transform(Xv))
             if ok_te.any():
-                te_acc[ok_te] += m.predict(sc.transform(Fte[ok_te]))
+                Xt = Fte[ok_te][:, fcol].copy()
+                Xt = np.where(np.isfinite(Xt), Xt, colmean)
+                te_acc[ok_te] += m.predict(sc.transform(Xt))
                 te_cnt[ok_te] += 1
         lo_te[:, ti] = np.where(te_cnt > 0, te_acc / np.maximum(te_cnt, 1), np.nan)
     return lo_tr, lo_te

@@ -132,6 +132,44 @@ def test_learned_arm_nan_on_sibling_less_polys():
     assert np.isnan(lo_tr).all()
 
 
+def test_learned_arm_handles_sparse_sibling_columns():
+    from decoder_v16 import learned_arm
+    # Pivot where sibling columns are present but never *fully* finite as a
+    # set (each column missing some rows). The arm must still emit predictions
+    # for eligible rows rather than degrading to all-NaN (fold-safe col-mean
+    # imputation on presence-filtered columns).
+    rng = np.random.RandomState(7)
+    canon, tgt, Y = [], [], []
+    for p in range(40):
+        for t in TARGETS_DEC:
+            canon.append(f"P{p:03d}")
+            tgt.append(t)
+            Y.append(float(p) + rng.randn() * 0.1)
+    canon = np.array(canon, str); tgt = np.array(tgt, str); Y = np.array(Y)
+    piv = build_pivot_df(canon, tgt, Y)
+    # drop ~30% of pivot values at random so no sibling column is fully finite
+    for col in piv.columns:
+        idx = np.where(rng.uniform(size=len(piv)) < 0.3)[0]
+        piv.iloc[idx, piv.columns.get_loc(col)] = np.nan
+    # ensure every row still has >=2 siblings (min_sibs)
+    nrow = piv.values.shape[0]
+    for r in range(nrow):
+        while np.isfinite(piv.values[r]).sum() < 2:
+            c = rng.randint(0, 7)
+            if not np.isfinite(piv.values[r, c]):
+                piv.iloc[r, c] = 1.0
+    lo_tr, lo_te = learned_arm(canon, tgt, Y, piv, canon, global_folds=5, seed=42)
+    assert lo_tr.shape == (len(canon), 7)
+    n_elig = 0
+    for i, t in enumerate(TARGETS_DEC):
+        ti = TARGET_IDX_DEC[t]
+        keep = [k for k in range(7) if k != ti]
+        elig = np.isfinite(piv.values[:, keep]).sum(axis=1) >= 2
+        n_elig += int(elig.sum())
+        assert int(np.isfinite(lo_tr[:, ti]).sum()) == int(elig.sum()), t
+    assert n_elig > 0
+
+
 if __name__ == "__main__":
     import traceback
     failed = 0
