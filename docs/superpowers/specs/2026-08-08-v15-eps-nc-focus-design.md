@@ -1,7 +1,7 @@
 # PolyWin R2 — v15 EPS/NC Focus (Design)
 
 Date: 2026-08-08
-Status: Approved (pre-registered in session; single-point change)
+Status: **RESULT (FAIL) — closed.** P14 (LB 0.883) stands as the final submission.
 Competition: AISEHack 2.0 Polymer Property Prediction Round 2 (`ppp-round-2` on Kaggle)
 
 ## 1. Why v15 exists
@@ -82,3 +82,32 @@ with `TGT_FOCUS = {"eps": 2.0, "nc": 2.0}`.
   differs from v14 by exactly that one line; everything else bit-identical; cells compile).
 - Smoke run locally, then push to Kaggle (`polywin-r2-v15-epsnc-focus`), full run,
   download, evaluate vs v14, decide per §3.
+
+## 5. Result (2026-08-08, full Kaggle run, version 1)
+
+Kernel: `shubhamkambli11/polywin-r2-v15-eps-nc-focus` (v1) — COMPLETE. All pre-registered
+gates **FAILED**; the change actively hurt the two targets it targeted:
+
+| target | v14 blend OOF | v15 blend OOF | Δ |
+|--------|---------------|---------------|-----|
+| eea    | 0.9133        | 0.9169        | +0.0036 |
+| egb    | 0.9250        | 0.9253        | +0.0003 |
+| egc    | 0.9070        | 0.9057        | −0.0013 |
+| ei     | 0.8239        | 0.8158        | −0.0081 |
+| eps    | 0.8009        | 0.7956        | **−0.0053** |
+| nc     | 0.8657        | 0.8423        | **−0.0234** |
+| tg     | 0.9020        | 0.9007        | −0.0013 |
+| **mean** | **0.8768**   | **0.8718**    | **−0.0051** |
+
+Gates:
+- EPS gain ≥ +0.01 → **FALSE** (−0.0053)
+- NC gain ≥ +0.01 → **FALSE** (−0.0234)
+- Overall ≥ +0.003 → **FALSE** (−0.0051)
+
+On the GNN raw OOF the effect is even clearer: eps GNN 0.7942 (v14 0.8012), nc GNN
+0.8485 (v14 0.8720). Doubling the fine-tune emphasis on eps/nc made the *MT-GNN* worse on
+them; the blend then correctly compensated by shrinking `w_GNN` for nc (0.817→0.727) and
+eps (0.784→0.727), still net-negative.
+
+**Decision: FAIL → STOP.** `P14 (LB 0.883)` is the **final submission**. No further
+fine-tune experiments. This closes the v15 line per the pre-registered contract.
