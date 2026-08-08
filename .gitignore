@@ -19,3 +19,7 @@ vault/pipeline_out_v12_smoke/Xtr.pkl
 vault/pipeline_out_v12_smoke/Xte.pkl
 vault/pipeline_out_v13_smoke/Xtr.pkl
 vault/pipeline_out_v13_smoke/Xte.pkl
+# P14 smoke/executed notebooks (regenerable)
+PolyWin_R2_v14_smoke_executed.ipynb
+vault/kernel-v14-p1m/
+vault/pipeline_out_v14_smoke/
