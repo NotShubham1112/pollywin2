@@ -82,6 +82,56 @@ def test_fit_linear_insufficient_points_falls_back():
     assert a == 1.0 and b == 0.0   # <3 pts -> identity fallback
 
 
+def _mk_full_siblings(n_poly=60, noise=0.05, seed=7):
+    """Every polymer carries all 7 targets, each a linear fn of a latent z
+    (+ tiny noise) -> the learned arm should reconstruct each target from the
+    other 6 siblings almost perfectly."""
+    rng = np.random.RandomState(seed)
+    z = rng.rand(n_poly)
+    w = {"eea": 1.0, "egb": 1.7, "egc": 2.3, "ei": 3.1, "eps": 4.2, "nc": 5.1, "tg": 6.2}
+    canon, tgt, Y = [], [], []
+    for p in range(n_poly):
+        for t in TARGETS_DEC:
+            canon.append(f"p{p:03d}")
+            tgt.append(t)
+            Y.append(3.0 + w[t] * z[p] + noise * rng.randn())
+    return (np.array(canon, dtype=str), np.array(tgt, dtype=str),
+            np.array(Y, dtype=np.float64))
+
+
+def test_learned_arm_recovers_siblings():
+    from decoder_v16 import learned_arm
+    canon, tgt, Y = _mk_full_siblings()
+    piv = build_pivot_df(canon, tgt, Y)
+    # drop ~1/3 of train rows as 'test' canon set (new polymers)
+    te_idx = np.arange(len(canon))[::3]
+    te_canon = canon[te_idx].copy()
+    lo_tr, lo_te = learned_arm(canon, tgt, Y, piv, te_canon, global_folds=5, seed=42)
+    assert lo_tr.shape == (len(canon), 7) and lo_te.shape == (len(te_idx), 7)
+    # each target's OOF arm is only defined on its own target rows
+    assert np.isnan(lo_tr).sum() == len(canon) * 6
+    # eps is linearly reconstructible from the other 6 sibling sensors
+    i_eps = TARGET_IDX_DEC["eps"]
+    m = tgt == "eps"
+    assert np.isfinite(lo_tr[m, i_eps]).all()
+    r2 = 1.0 - np.mean((Y[m] - lo_tr[m, i_eps]) ** 2) / np.var(Y[m])
+    assert r2 > 0.90
+
+
+def test_learned_arm_nan_on_sibling_less_polys():
+    from decoder_v16 import learned_arm
+    # only ADD single-target polymers -> their canon has no siblings in pivot,
+    # so the learned arm must REPORT NaN (caller falls back to target mean)
+    canon = np.array(["P1", "P2", "P3"], dtype=str)
+    tgt = np.array(["eps"] * 3, dtype=str)
+    Y = np.array([1.0, 2.0, 3.0])
+    piv = build_pivot_df(np.array(["P1", "P2", "P3", "Q"], dtype=str),
+                         np.array(["eps", "eps", "eps", "eps"], dtype=str),
+                         np.array([1.0, 2.0, 3.0, 9.0]))
+    lo_tr, _ = learned_arm(canon, tgt, Y, piv, np.array(["NEW"], dtype=str), global_folds=2, seed=1)
+    assert np.isnan(lo_tr).all()
+
+
 if __name__ == "__main__":
     import traceback
     failed = 0

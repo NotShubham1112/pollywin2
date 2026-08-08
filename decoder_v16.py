@@ -134,3 +134,65 @@ def physics_arm(sib_tr, sib_te, tr_tgt=None, group=None, global_folds=GLOBAL_FOL
                     vals[m] = a_k * aug_tr[m, fcol] + b_k
                     out_tr[:, ti] = np.where(m, vals, out_tr[:, ti])
     return out_tr, out_te
+
+
+def learned_arm(canon_tr, tgt_tr, Y_tr, pivot, canon_te, global_folds=GLOBAL_FOLDS,
+                seed=SEED, alpha=10.0, min_sibs=2):
+    """Fold-safe learned cross-target arm. Returns (lo_tr, lo_te) as (n_tr,7)
+    and (n_te,7) float64 arrays in TARGETS_DEC column order.
+
+    For each target t: per-row features = the canon's sibling values for the
+    other 6 targets (from the train-only pivot), standardized per fold. A
+    per-target Ridge(alpha) is fit on the target-t rows of GroupKFold training
+    folds and validated on the held-out canon-fold rows (a canon never crosses
+    folds, so a held-out polymer's own target labels never enter its Ridge).
+    Test inference averages the per-fold models on the full-train pivot.
+    Rows whose canon has < `min_sibs` known siblings stay NaN (caller falls
+    back to the target mean).
+    """
+    from sklearn.model_selection import GroupKFold
+    from sklearn.linear_model import Ridge
+    from sklearn.preprocessing import StandardScaler
+
+    n_tr, n_te = len(canon_tr), len(canon_te)
+    sib_tr = sibling_feature(canon_tr, pivot)
+    sib_te = sibling_feature(canon_te, pivot)
+    lo_tr = np.full((n_tr, 7), np.nan, dtype=np.float64)
+    lo_te = np.full((n_te, 7), np.nan, dtype=np.float64)
+    group_tr = np.asarray(canon_tr)
+
+    for t in TARGETS_DEC:
+        ti = TARGET_IDX_DEC[t]
+        idx_t = np.where(tgt_tr == t)[0]
+        if len(idx_t) < 1:
+            continue
+        keep_cols = [j for j in range(7) if j != ti]
+        Ftr = sib_tr[:, keep_cols]
+        Fte = sib_te[:, keep_cols]
+        ok_tr = np.isfinite(Ftr).sum(axis=1) >= min_sibs
+        ok_te = np.isfinite(Fte).sum(axis=1) >= min_sibs
+        n_groups = len(np.unique(group_tr[idx_t]))
+        if n_groups < 2:
+            continue
+        n_splits = max(1, min(global_folds, n_groups))
+        cv = GroupKFold(n_splits=n_splits)
+        te_acc = np.zeros(n_te)
+        te_cnt = np.zeros(n_te)
+        idx_t_arr = np.asarray(idx_t)
+        for trk, vk in cv.split(idx_t_arr, Y_tr[idx_t], group_tr[idx_t]):
+            # trk/vk are positional in idx_t; map to global rows
+            g_trk = idx_t[trk]
+            g_vk = idx_t[vk]
+            fit_ok = g_trk[ok_tr[g_trk]]
+            if len(fit_ok) < 1:
+                continue
+            sc = StandardScaler().fit(Ftr[fit_ok])
+            m = Ridge(alpha=alpha).fit(sc.transform(Ftr[fit_ok]), Y_tr[fit_ok])
+            vok = g_vk[ok_tr[g_vk]]
+            if len(vok) > 0:
+                lo_tr[vok, ti] = m.predict(sc.transform(Ftr[vok]))
+            if ok_te.any():
+                te_acc[ok_te] += m.predict(sc.transform(Fte[ok_te]))
+                te_cnt[ok_te] += 1
+        lo_te[:, ti] = np.where(te_cnt > 0, te_acc / np.maximum(te_cnt, 1), np.nan)
+    return lo_tr, lo_te
