@@ -80,7 +80,36 @@ shared features, not from loss reweighting. v15 was falsified, stopped, and P14 
 - Each experiment was a single change, pre-registered, with a stopping gate. No blind
   tuning after signal died.
 
-## 5. Recommendation for the future
+## 5. Post-hoc review: are further blend gains available?
+
+On 2026-08-08 a research report proposed target-specialist re-weighting as the top
+remaining candidate ("lean EPS/NC toward the GNN, Tg/Ei toward the GBM"). We audited it
+against P14's actual artifacts before acting. Three facts were archived:
+
+1. **P14 already implements target-specialist blending.** The v14 blend is a per-target
+   Ridge over [GBM, MT-GNN] OOF with an OOF-tuned alpha per property -- not a single
+   global ridge. Its learned weights already match the report's prescription (tg lean
+   GBM, eps/nc/egb/eea lean GNN).
+2. **Oracle arm-selection underperforms the learned ridge blend.** From
+   `blend_oof_test.npz`, picking the best single arm per target (an oracle that can
+   never lose to weight-tuning) scores **mean R2 0.8723** vs P14's ridge blend **0.8769**.
+   The two models are complementary, linear blending beats arm selection, and P14 is
+   already capturing the available blend benefit. Manual weight tweaks can only
+   overfit OOF.
+3. **Therefore target-level reweighting is considered exhausted**; no further
+   submission slots were allocated to blend experiments. Remaining candidates were
+   rejected after review: snapshot ensemble (no saved checkpoints; needs a full
+   retrain for ~+0.001-0.003), extended pretraining (P14 *is* that experiment, +0.006;
+   report flags diminishing returns), pseudo-labeling (v8 already falsified:
+   OOF +0.017 to LB -0.019), descriptor stream (only genuinely orthogonal option, but a
+   new modeling branch, not an endgame tweak).
+
+**Conclusion:** the report's headline proposal was already shipped in P14, its expected
+gain was measured to not exist, and no other candidate clears cost/risk. This is the
+evidence-based justification for freezing P14 (0.883) as final and not spending
+submission slots on blend tuning.
+
+## 6. Recommendation for the future
 
 - Submit P14 (0.883) as the final answer wherever allowed; keep it frozen as production.
 - Do not overwrite P14; it is the best confirmed model.
