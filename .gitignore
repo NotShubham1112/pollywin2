@@ -4,6 +4,18 @@ __pycache__/
 # smoke-test validation copy (regenerated via build_pipeline_nb.py)
 smoke.ipynb
 
-# pipeline run artifacts (regenerable caches and model weights)
+# pipeline run artifacts (regenerable caches, model weights, intermediate data)
 vault/pipeline_out/*.pkl
 vault/pipeline_out/*.pt
+vault/fp_cache.npz
+vault/kaggle_mt_stack_out/feature_cache/features_*.pkl
+vault/kernel-v12-output/Xtr.pkl
+vault/kernel-v12-output/Xte.pkl
+vault/pipeline_out_smoke/Xtr.pkl
+vault/pipeline_out_smoke/Xte.pkl
+vault/pipeline_out_smoke/Xtr_full.pkl
+vault/pipeline_out_smoke/Xte_full.pkl
+vault/pipeline_out_v12_smoke/Xtr.pkl
+vault/pipeline_out_v12_smoke/Xte.pkl
+vault/pipeline_out_v13_smoke/Xtr.pkl
+vault/pipeline_out_v13_smoke/Xte.pkl
