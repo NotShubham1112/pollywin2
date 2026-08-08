@@ -254,6 +254,20 @@ def test_v8_clip_axis():
     assert "Xpi.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)" in code
     assert "Xps_all.clip(lower=Xtr[MODEL_COLS].min(), upper=Xtr[MODEL_COLS].max(), axis=1)" in code
 
+def test_moe_blend_layer10():
+    """Layer 10 MoE blend must be present, fold-safe, and fall back to the stack
+    when the GNN cache is absent."""
+    code, md = _build()
+    assert "## Layer 10" in md
+    assert "gnn_oof.csv" in code
+    assert "gnn_test.csv" in code
+    assert "r2_score(y_tt[tr_l][fin], pred[fin])" in code
+    assert "fold_te += (best_w_here * FINAL_TE[tt] + (1 - best_w_here) * g_te) / len(splits)" in code
+    assert "FINAL_TE[tt] = blend_te[tt]" in code
+    assert "MOE_BLEND = True" in code
+    assert "MoE blend skipped, stack retained" in code
+    assert "MOE_BLEND = False" in code
+
 def test_all_cells_compile():
     """Every code cell must be valid Python (regression: fig-20 annotate had a
     raw newline inside a string literal, a SyntaxError that only nbconvert hit)."""

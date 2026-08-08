@@ -1,0 +1,313 @@
+[{"stream_name":"stderr","time":8.167726026,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.167790851,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.167799532,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.167807663,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":8.848526246,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.84856759,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.848571838,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.848574576,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":10.050769749,"data":"installing rdkit\n"}
+,{"stream_name":"stdout","time":13.271174815,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 43.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":13.473799241,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 43.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":17.265862545,"data":"installing torch_geometric\n"}
+,{"stream_name":"stdout","time":18.612305477,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 2.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":18.800250831,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 22.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":18.814501024,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 2.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":18.814537544,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 22.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":29.792356772,"data":"CUDA kernel missing for this GPU; reinstalling broad-CUDA torch (cu121)...\n"}
+,{"stream_name":"stdout","time":34.365063148,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 251.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":34.567643843,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 251.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":37.932688171,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 249.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.134919492,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 249.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.202406531,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 328.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.404580678,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 328.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.503280717,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 117.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.704892338,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 117.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":41.477778274,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 316.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":41.685925647,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 316.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":45.250254789,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 318.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":45.452746936,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 318.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":47.129854252,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 291.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":47.332432755,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 291.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":47.987552809,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 221.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":48.189693968,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 221.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":48.950635818,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 235.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":49.152827315,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 235.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":50.481108261,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 232.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":50.683319742,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 232.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":52.448457921,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 215.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":52.650736563,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 215.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":53.261345917,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 132.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":53.464047511,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 132.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":54.217324114,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 288.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":54.419567877,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 288.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.466569268,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 77.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.484492484,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 233.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.517192836,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 203.4/203.4 kB 339.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.53408488,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 258.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.648668079,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 21.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.669249191,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 77.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.66927294,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.6/44.6 kB 233.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.669278507,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 203.4/203.4 kB 339.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.669285055,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 258.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.669293062,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 21.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.670450617,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 277.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.702132625,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 342.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.85169963,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 39.7/39.7 MB 312.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.872814727,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 277.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.872848204,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 342.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":55.872852176,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 39.7/39.7 MB 312.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":198.914614728,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":198.91467758,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":198.914686825,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":198.91469327,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":198.914698893,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":198.914704936,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":198.914711096,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":198.914716591,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":198.914722259,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.4.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121125875,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":199.121153305,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":199.121160684,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":199.12116665,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121172585,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121178349,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.12118365,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121189154,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121194849,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.4.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.12120663,"data":"\n"}
+,{"stream_name":"stderr","time":199.121211219,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":199.12121503,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":199.12121884,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":199.121222733,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121236762,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121239762,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121242438,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121245147,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":199.121247823,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.4.0 which is incompatible.\n"}
+,{"stream_name":"stdout","time":200.94268604,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 5.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":201.145544434,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 5.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":203.673495888,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.3/57.3 kB 156.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":203.876378948,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.3/57.3 kB 156.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":205.918198839,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 104.0/104.0 kB 29.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.120867736,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 104.0/104.0 kB 29.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.434125862,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.7/41.7 kB 195.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.636586659,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.7/41.7 kB 195.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.742277946,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 46.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.759659372,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 155.6/155.6 kB 261.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.788291861,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 157.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.806197821,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 206.6/206.6 kB 295.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.823341551,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 253.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.914410204,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 233.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.931585467,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.8/122.8 kB 340.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944340242,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 46.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944370057,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 155.6/155.6 kB 261.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944382242,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 157.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944386001,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 206.6/206.6 kB 295.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944389145,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 134.9/134.9 kB 253.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944392092,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 233.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.944395115,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 122.8/122.8 kB 340.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.949170087,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.1/73.1 kB 257.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.965585453,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 291.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":206.982873133,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 220.5/220.5 kB 316.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.028961933,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 278.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.04462326,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 137.0/137.0 kB 312.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.062403176,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 224.3/224.3 kB 279.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.080115064,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 242.4/242.4 kB 311.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.096580556,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.5/65.5 kB 263.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.128546618,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 256.3/256.3 kB 307.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.144962706,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 61.6/61.6 kB 169.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151152939,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 73.1/73.1 kB 257.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.15117918,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 291.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151184979,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 220.5/220.5 kB 316.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151190339,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.5/67.5 kB 278.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.1511958,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 137.0/137.0 kB 312.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151200224,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 224.3/224.3 kB 279.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151204774,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 242.4/242.4 kB 311.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151212858,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.5/65.5 kB 263.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151216932,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 256.3/256.3 kB 307.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.151219987,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 61.6/61.6 kB 169.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.16135287,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 241.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.178057684,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.1/131.1 kB 260.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.195219875,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.8/109.8 kB 328.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.363871616,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.6/45.6 kB 241.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.363921416,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 131.1/131.1 kB 260.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":207.363926802,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 109.8/109.8 kB 328.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":224.095962707,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":224.096003015,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.096054209,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.096062998,"data":"datasets 5.0.0 requires fsspec[http]\u003c=2026.4.0,\u003e=2023.1.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096068028,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096072885,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096077266,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.09608122,"data":"google-colab 1.0.0 requires requests==2.32.4, but you have requests 2.34.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096084648,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096088908,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096093481,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096098062,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096102635,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.096107353,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298716239,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":224.298754354,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.29876022,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.298766283,"data":"datasets 5.0.0 requires fsspec[http]\u003c=2026.4.0,\u003e=2023.1.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298774954,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298778239,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298781162,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298784282,"data":"google-colab 1.0.0 requires requests==2.32.4, but you have requests 2.34.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298787013,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298789791,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298792547,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.29879517,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298812102,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298815109,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298817782,"data":"\n"}
+,{"stream_name":"stderr","time":224.298820362,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":224.298823532,"data":"bigframes 2.39.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.29882636,"data":"google-adk 1.29.0 requires google-cloud-bigquery-storage\u003e=2.0.0, which is not installed.\n"}
+,{"stream_name":"stderr","time":224.298829212,"data":"datasets 5.0.0 requires fsspec[http]\u003c=2026.4.0,\u003e=2023.1.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298831944,"data":"ydata-profiling 4.18.4 requires numpy\u003c2.4,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298835869,"data":"google-colab 1.0.0 requires jupyter-server==2.14.0, but you have jupyter-server 2.12.5 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298838669,"data":"google-colab 1.0.0 requires pandas==2.2.2, but you have pandas 2.3.3 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298841268,"data":"google-colab 1.0.0 requires requests==2.32.4, but you have requests 2.34.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.29884398,"data":"dopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298846652,"data":"moviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298849351,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298852,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298854634,"data":"numba 0.60.0 requires numpy\u003c2.1,\u003e=1.22, but you have numpy 2.5.1 which is incompatible.\n"}
+,{"stream_name":"stderr","time":224.298857321,"data":"gcsfs 2025.3.0 requires fsspec==2025.3.0, but you have fsspec 2026.7.0 which is incompatible.\n"}
+,{"stream_name":"stdout","time":227.605795366,"data":"post-reinstall probe rc: 0 out: OK err: \n"}
+,{"stream_name":"stderr","time":241.90455402,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":241.904611774,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.904621308,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":241.905171395,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":241.905191695,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":241.905196507,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":241.905380329,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":241.905392701,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":241.905410072,"data":"Exception encountered at \"In [1]\":\n"}
+,{"stream_name":"stderr","time":241.905414684,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":241.90541886,"data":"ImportError                               Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":241.90542297,"data":"/tmp/ipykernel_23/4059424492.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":241.905429146,"data":"     56 RDLogger.DisableLog(\"rdApp.*\")\n"}
+,{"stream_name":"stderr","time":241.905436622,"data":"     57 from rdkit.Chem import Descriptors, AllChem, MACCSkeys, rdMolDescriptors, Crippen, GraphDescriptors\n"}
+,{"stream_name":"stderr","time":241.905439572,"data":"---\u003e 58 from sklearn.metrics import r2_score\n"}
+,{"stream_name":"stderr","time":241.905442357,"data":"     59 from sklearn.model_selection import GroupKFold, train_test_split\n"}
+,{"stream_name":"stderr","time":241.905445104,"data":"     60 from sklearn.preprocessing import StandardScaler\n"}
+,{"stream_name":"stderr","time":241.905447879,"data":"\n"}
+,{"stream_name":"stderr","time":241.905450429,"data":"/usr/local/lib/python3.12/dist-packages/sklearn/__init__.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905453227,"data":"     71     _distributor_init,\n"}
+,{"stream_name":"stderr","time":241.905456622,"data":"     72 )\n"}
+,{"stream_name":"stderr","time":241.905475603,"data":"---\u003e 73 from .base import clone  # noqa: E402\n"}
+,{"stream_name":"stderr","time":241.905480886,"data":"     74 from .utils._show_versions import show_versions  # noqa: E402\n"}
+,{"stream_name":"stderr","time":241.905485586,"data":"     75 \n"}
+,{"stream_name":"stderr","time":241.905489558,"data":"\n"}
+,{"stream_name":"stderr","time":241.90549396,"data":"/usr/local/lib/python3.12/dist-packages/sklearn/base.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.90549882,"data":"     17 from ._config import config_context, get_config\n"}
+,{"stream_name":"stderr","time":241.905502884,"data":"     18 from .exceptions import InconsistentVersionWarning\n"}
+,{"stream_name":"stderr","time":241.905506967,"data":"---\u003e 19 from .utils._estimator_html_repr import _HTMLDocumentationLinkMixin, estimator_html_repr\n"}
+,{"stream_name":"stderr","time":241.905511204,"data":"     20 from .utils._metadata_requests import _MetadataRequester, _routing_enabled\n"}
+,{"stream_name":"stderr","time":241.905515312,"data":"     21 from .utils._param_validation import validate_parameter_constraints\n"}
+,{"stream_name":"stderr","time":241.90551948,"data":"\n"}
+,{"stream_name":"stderr","time":241.90552363,"data":"/usr/local/lib/python3.12/dist-packages/sklearn/utils/__init__.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905527927,"data":"     13 from . import _joblib, metadata_routing\n"}
+,{"stream_name":"stderr","time":241.90553188,"data":"     14 from ._bunch import Bunch\n"}
+,{"stream_name":"stderr","time":241.90553582,"data":"---\u003e 15 from ._chunking import gen_batches, gen_even_slices\n"}
+,{"stream_name":"stderr","time":241.905539826,"data":"     16 from ._estimator_html_repr import estimator_html_repr\n"}
+,{"stream_name":"stderr","time":241.905545947,"data":"     17 \n"}
+,{"stream_name":"stderr","time":241.905553578,"data":"\n"}
+,{"stream_name":"stderr","time":241.905556264,"data":"/usr/local/lib/python3.12/dist-packages/sklearn/utils/_chunking.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905559147,"data":"      9 \n"}
+,{"stream_name":"stderr","time":241.905577049,"data":"     10 from .._config import get_config\n"}
+,{"stream_name":"stderr","time":241.905587338,"data":"---\u003e 11 from ._param_validation import Interval, validate_params\n"}
+,{"stream_name":"stderr","time":241.905592715,"data":"     12 \n"}
+,{"stream_name":"stderr","time":241.905597324,"data":"     13 \n"}
+,{"stream_name":"stderr","time":241.905601189,"data":"\n"}
+,{"stream_name":"stderr","time":241.905604854,"data":"/usr/local/lib/python3.12/dist-packages/sklearn/utils/_param_validation.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905609141,"data":"     12 \n"}
+,{"stream_name":"stderr","time":241.905612947,"data":"     13 import numpy as np\n"}
+,{"stream_name":"stderr","time":241.905616876,"data":"---\u003e 14 from scipy.sparse import csr_matrix, issparse\n"}
+,{"stream_name":"stderr","time":241.905621858,"data":"     15 \n"}
+,{"stream_name":"stderr","time":241.905625691,"data":"     16 from .._config import config_context, get_config\n"}
+,{"stream_name":"stderr","time":241.905629639,"data":"\n"}
+,{"stream_name":"stderr","time":241.905633361,"data":"/usr/local/lib/python3.12/dist-packages/scipy/sparse/__init__.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905637482,"data":"    302 import importlib as _importlib\n"}
+,{"stream_name":"stderr","time":241.905641446,"data":"    303 \n"}
+,{"stream_name":"stderr","time":241.905645212,"data":"--\u003e 304 from ._base import *\n"}
+,{"stream_name":"stderr","time":241.905649234,"data":"    305 from ._csr import *\n"}
+,{"stream_name":"stderr","time":241.905653238,"data":"    306 from ._csc import *\n"}
+,{"stream_name":"stderr","time":241.90566294,"data":"\n"}
+,{"stream_name":"stderr","time":241.905679607,"data":"/usr/local/lib/python3.12/dist-packages/scipy/sparse/_base.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905684783,"data":"      6 import operator\n"}
+,{"stream_name":"stderr","time":241.905689595,"data":"      7 \n"}
+,{"stream_name":"stderr","time":241.905694218,"data":"----\u003e 8 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,\n"}
+,{"stream_name":"stderr","time":241.905699075,"data":"      9                        get_sum_dtype, isdense, isscalarlike, _todata,\n"}
+,{"stream_name":"stderr","time":241.905703187,"data":"     10                        matrix, validateaxis, getdtype, is_pydata_spmatrix)\n"}
+,{"stream_name":"stderr","time":241.905707243,"data":"\n"}
+,{"stream_name":"stderr","time":241.905710969,"data":"/usr/local/lib/python3.12/dist-packages/scipy/sparse/_sputils.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905715065,"data":"      8 from math import prod\n"}
+,{"stream_name":"stderr","time":241.905718989,"data":"      9 import scipy.sparse as sp\n"}
+,{"stream_name":"stderr","time":241.90572292,"data":"---\u003e 10 from scipy._lib._util import np_long, np_ulong\n"}
+,{"stream_name":"stderr","time":241.905726938,"data":"     11 \n"}
+,{"stream_name":"stderr","time":241.905730707,"data":"     12 \n"}
+,{"stream_name":"stderr","time":241.905734486,"data":"\n"}
+,{"stream_name":"stderr","time":241.905738244,"data":"/usr/local/lib/python3.12/dist-packages/scipy/_lib/_util.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905742347,"data":"     12 \n"}
+,{"stream_name":"stderr","time":241.90574609,"data":"     13 import numpy as np\n"}
+,{"stream_name":"stderr","time":241.905749907,"data":"---\u003e 14 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,\n"}
+,{"stream_name":"stderr","time":241.905756069,"data":"     15                                    is_numpy, is_marray, xp_result_device,\n"}
+,{"stream_name":"stderr","time":241.90578115900001,"data":"     16                                    xp_size, xp_result_type)\n"}
+,{"stream_name":"stderr","time":241.905786604,"data":"\n"}
+,{"stream_name":"stderr","time":241.905791138,"data":"/usr/local/lib/python3.12/dist-packages/scipy/_lib/_array_api.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905796242,"data":"     23 \n"}
+,{"stream_name":"stderr","time":241.905800582,"data":"     24 from scipy._lib import array_api_compat\n"}
+,{"stream_name":"stderr","time":241.905804582,"data":"---\u003e 25 from scipy._lib.array_api_compat import (\n"}
+,{"stream_name":"stderr","time":241.905808595,"data":"     26     is_array_api_obj,\n"}
+,{"stream_name":"stderr","time":241.905812525,"data":"     27     is_lazy_array,\n"}
+,{"stream_name":"stderr","time":241.905816413,"data":"\n"}
+,{"stream_name":"stderr","time":241.905820116,"data":"/usr/local/lib/python3.12/dist-packages/scipy/_lib/array_api_compat/numpy/__init__.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905824385,"data":"      2 from typing import Final\n"}
+,{"stream_name":"stderr","time":241.905828416,"data":"      3 \n"}
+,{"stream_name":"stderr","time":241.905832129,"data":"----\u003e 4 from numpy import *  # noqa: F403  # pyright: ignore[reportWildcardImportFromLibrary]\n"}
+,{"stream_name":"stderr","time":241.905836284,"data":"      5 \n"}
+,{"stream_name":"stderr","time":241.905840095,"data":"      6 # from numpy import * doesn't overwrite these builtin names\n"}
+,{"stream_name":"stderr","time":241.905844093,"data":"\n"}
+,{"stream_name":"stderr","time":241.905847946,"data":"/usr/local/lib/python3.12/dist-packages/numpy/__init__.py in __getattr__(attr)\n"}
+,{"stream_name":"stderr","time":241.905851701,"data":"    365         putmask,\n"}
+,{"stream_name":"stderr","time":241.905857652,"data":"    366         rad2deg,\n"}
+,{"stream_name":"stderr","time":241.905877468,"data":"--\u003e 367         radians,\n"}
+,{"stream_name":"stderr","time":241.905882657,"data":"    368         ravel,\n"}
+,{"stream_name":"stderr","time":241.90588718,"data":"    369         recarray,\n"}
+,{"stream_name":"stderr","time":241.905891845,"data":"\n"}
+,{"stream_name":"stderr","time":241.905896125,"data":"/usr/local/lib/python3.12/dist-packages/numpy/char/__init__.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905900988,"data":"----\u003e 1 from numpy._core.defchararray import __all__, __doc__\n"}
+,{"stream_name":"stderr","time":241.905905113,"data":"      2 \n"}
+,{"stream_name":"stderr","time":241.905908904,"data":"      3 __DEPRECATED = frozenset({\"chararray\", \"array\", \"asarray\"})\n"}
+,{"stream_name":"stderr","time":241.905913226,"data":"      4 \n"}
+,{"stream_name":"stderr","time":241.905916962,"data":"      5 \n"}
+,{"stream_name":"stderr","time":241.905920733,"data":"\n"}
+,{"stream_name":"stderr","time":241.905924451,"data":"/usr/local/lib/python3.12/dist-packages/numpy/_core/defchararray.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905928673,"data":"     21 from numpy._core import overrides\n"}
+,{"stream_name":"stderr","time":241.905932693,"data":"     22 from numpy._core.multiarray import compare_chararrays\n"}
+,{"stream_name":"stderr","time":241.90593677,"data":"---\u003e 23 from numpy._core.strings import (\n"}
+,{"stream_name":"stderr","time":241.90594074,"data":"     24     _join as join,\n"}
+,{"stream_name":"stderr","time":241.905944588,"data":"     25     _rsplit as rsplit,\n"}
+,{"stream_name":"stderr","time":241.905948468,"data":"\n"}
+,{"stream_name":"stderr","time":241.905958499,"data":"/usr/local/lib/python3.12/dist-packages/numpy/_core/strings.py in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":241.905983076,"data":"     20 from numpy._core.multiarray import _vec_string\n"}
+,{"stream_name":"stderr","time":241.905988337,"data":"     21 from numpy._core.overrides import array_function_dispatch, set_module\n"}
+,{"stream_name":"stderr","time":241.905993194,"data":"---\u003e 22 from numpy._core.umath import (\n"}
+,{"stream_name":"stderr","time":241.905997251,"data":"     23     _center,\n"}
+,{"stream_name":"stderr","time":241.90600118,"data":"     24     _expandtabs,\n"}
+,{"stream_name":"stderr","time":241.906005005,"data":"\n"}
+,{"stream_name":"stderr","time":241.906008793,"data":"ImportError: cannot import name '_center' from 'numpy._core.umath' (/usr/local/lib/python3.12/dist-packages/numpy/_core/umath.py)\n"}
+,{"stream_name":"stderr","time":241.906024233,"data":"\n"}
+,{"stream_name":"stderr","time":244.280941499,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":244.280972571,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":244.441619954,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":244.441650815,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":245.274205254,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":245.623572308,"data":"[NbConvertApp] Writing 72248 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":248.364726254,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":249.435981252,"data":"[NbConvertApp] Writing 501924 bytes to __results__.html\n"}
+]

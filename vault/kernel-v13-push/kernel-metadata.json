@@ -1,0 +1,15 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v13-small-five-specialist",
+  "title": "PolyWin R2 v13 Small-Five Specialist",
+  "code_file": "PolyWin_R2_v13_specialist.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": [],
+  "model_sources": []
+}

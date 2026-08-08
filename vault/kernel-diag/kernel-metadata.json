@@ -1,0 +1,13 @@
+{
+  "id": "shubhamkambli11/polywin-r2-env-diag2",
+  "title": "PolyWin R2 env diag2",
+  "code_file": "diag.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": [],
+  "dataset_sources": [],
+  "model_sources": []
+}

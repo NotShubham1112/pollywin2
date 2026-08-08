@@ -1,0 +1,85 @@
+[{"stream_name":"stderr","time":6.352482849,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.352543286,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.352547131,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.352549646,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.915540438,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.915571568,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.915576393,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.915585088,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":8.138576916,"data":"installing rdkit\n"}
+,{"stream_name":"stdout","time":11.219879667,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 40.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":11.421809531,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 40.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.976366326,"data":"installing torch_geometric\n"}
+,{"stream_name":"stdout","time":16.197924524,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 841.4 kB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.399627452,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 841.4 kB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.541031369,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 7.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.742900191,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 7.0 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":46.515918374,"data":"device: cuda | SMOKE: False | folds: 5 | PRETRAIN_EPOCHS: 5 | out: /kaggle/working\n"}
+,{"stream_name":"stdout","time":46.661393107,"data":"train: (7409, 3) test: (4940, 3)\n"}
+,{"stream_name":"stdout","time":77.078947966,"data":"descriptors done\n"}
+,{"stream_name":"stdout","time":77.083893606,"data":"FEAT_COLS: 22\n"}
+,{"stream_name":"stdout","time":93.420966321,"data":"train: (7409, 2237) test: (4940, 2237) targets: ['eea', 'egb', 'egc', 'ei', 'eps', 'nc', 'tg']\n"}
+,{"stream_name":"stdout","time":103.94064183,"data":"graphs: 7409 train, 4940 test (10s)\n"}
+,{"stream_name":"stdout","time":539.031957135,"data":"PI1M pretraining corpus: 20000 SMILES (capped at 20000 )\n"}
+,{"stream_name":"stdout","time":554.658427963,"data":"pretraining graphs: 20000\n"}
+,{"stream_name":"stdout","time":554.660891844,"data":"=== Pretraining GNN on PI1M ===\n"}
+,{"stream_name":"stderr","time":557.720062042,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":557.720182284,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":557.720191294,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":557.720223665,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":557.720297772,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":557.720513185,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":557.720902806,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":557.720925603,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":557.720930731,"data":"Exception encountered at \"In [6]\":\n"}
+,{"stream_name":"stderr","time":557.720935586,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":557.720940151,"data":"AcceleratorError                          Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":557.720945065,"data":"/tmp/ipykernel_22/1424149124.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":557.720950281,"data":"     93 \n"}
+,{"stream_name":"stderr","time":557.720954835,"data":"     94 print(\"=== Pretraining GNN on PI1M ===\", flush=True)\n"}
+,{"stream_name":"stderr","time":557.720959035,"data":"---\u003e 95 pretrained_state = pretrain()\n"}
+,{"stream_name":"stderr","time":557.720963887,"data":"\n"}
+,{"stream_name":"stderr","time":557.72096872,"data":"/tmp/ipykernel_22/1424149124.py in pretrain(epochs, batch_size, lr)\n"}
+,{"stream_name":"stderr","time":557.72097357,"data":"     75             batch = batch.to(DEVICE)\n"}
+,{"stream_name":"stderr","time":557.720978105,"data":"     76             opt.zero_grad()\n"}
+,{"stream_name":"stderr","time":557.720982889,"data":"---\u003e 77             a_loss, b_loss = model(batch.x, batch.edge_index, batch.edge_attr, batch)\n"}
+,{"stream_name":"stderr","time":557.720987912,"data":"     78             loss = a_loss + 0.5 * b_loss\n"}
+,{"stream_name":"stderr","time":557.720992588,"data":"     79             loss.backward(); opt.step()\n"}
+,{"stream_name":"stderr","time":557.720997617,"data":"\n"}
+,{"stream_name":"stderr","time":557.721002224,"data":"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py in _wrapped_call_impl(self, *args, **kwargs)\n"}
+,{"stream_name":"stderr","time":557.721006966,"data":"   1774             return self._compiled_call_impl(*args, **kwargs)  # type: ignore[misc]\n"}
+,{"stream_name":"stderr","time":557.721011637,"data":"   1775         else:\n"}
+,{"stream_name":"stderr","time":557.721015544,"data":"-\u003e 1776             return self._call_impl(*args, **kwargs)\n"}
+,{"stream_name":"stderr","time":557.721019675,"data":"   1777 \n"}
+,{"stream_name":"stderr","time":557.721023544,"data":"   1778     # torchrec tests the code consistency with the following code\n"}
+,{"stream_name":"stderr","time":557.721027604,"data":"\n"}
+,{"stream_name":"stderr","time":557.721031355,"data":"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py in _call_impl(self, *args, **kwargs)\n"}
+,{"stream_name":"stderr","time":557.721035464,"data":"   1785                 or _global_backward_pre_hooks or _global_backward_hooks\n"}
+,{"stream_name":"stderr","time":557.721039581,"data":"   1786                 or _global_forward_hooks or _global_forward_pre_hooks):\n"}
+,{"stream_name":"stderr","time":557.721043684,"data":"-\u003e 1787             return forward_call(*args, **kwargs)\n"}
+,{"stream_name":"stderr","time":557.721047759,"data":"   1788 \n"}
+,{"stream_name":"stderr","time":557.721051578,"data":"   1789         result = None\n"}
+,{"stream_name":"stderr","time":557.721065056,"data":"\n"}
+,{"stream_name":"stderr","time":557.721070107,"data":"/tmp/ipykernel_22/1424149124.py in forward(self, x, edge_index, edge_attr, batch)\n"}
+,{"stream_name":"stderr","time":557.721075105,"data":"     42     def forward(self, x, edge_index, edge_attr, batch):\n"}
+,{"stream_name":"stderr","time":557.721079341,"data":"     43         n = x.size(0); m = edge_index.size(1)\n"}
+,{"stream_name":"stderr","time":557.721084144,"data":"---\u003e 44         atom_mask = torch.rand(n, device=x.device) \u003c self.mask_atom\n"}
+,{"stream_name":"stderr","time":557.7210884,"data":"     45         bond_mask = torch.rand(m, device=x.device) \u003c self.mask_bond\n"}
+,{"stream_name":"stderr","time":557.721092497,"data":"     46         x_c = x.clone(); x_c[atom_mask] = 0.0\n"}
+,{"stream_name":"stderr","time":557.721096354,"data":"\n"}
+,{"stream_name":"stderr","time":557.721100118,"data":"AcceleratorError: CUDA error: no kernel image is available for execution on the device\n"}
+,{"stream_name":"stderr","time":557.721105827,"data":"Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\n"}
+,{"stream_name":"stderr","time":557.721110667,"data":"CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\n"}
+,{"stream_name":"stderr","time":557.721115298,"data":"For debugging consider passing CUDA_LAUNCH_BLOCKING=1\n"}
+,{"stream_name":"stderr","time":557.721119705,"data":"Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"}
+,{"stream_name":"stderr","time":557.721123823,"data":"\n"}
+,{"stream_name":"stderr","time":557.721128072,"data":"\n"}
+,{"stream_name":"stderr","time":559.740756371,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":559.740790811,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":559.883160997,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":559.88320949,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":560.489824748,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":560.786296008,"data":"[NbConvertApp] Writing 56234 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":563.167067529,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":564.093253825,"data":"[NbConvertApp] Writing 477737 bytes to __results__.html\n"}
+]

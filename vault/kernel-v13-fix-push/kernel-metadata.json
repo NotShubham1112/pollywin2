@@ -1,0 +1,15 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v13-gbm-gnn-blend-fix",
+  "title": "PolyWin R2 v13 GBM+GNN blend (test denorm fix)",
+  "code_file": "PolyWin_R2_v13_gbm_gnn_blend.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": [],
+  "model_sources": []
+}

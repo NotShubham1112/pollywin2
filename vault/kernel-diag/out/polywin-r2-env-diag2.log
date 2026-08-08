@@ -1,0 +1,64 @@
+[{"stream_name":"stderr","time":6.312051921,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.312117836,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.312122512,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.312125679,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.871619821,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.871652844,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.871656532,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.871659416,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":8.106513684,"data":"--- base torch ---\n"}
+,{"stream_name":"stdout","time":14.095745965,"data":"rc 1 out  err reported at some other API call, so the stacktrace below might be incorrect.\n"}
+,{"stream_name":"stdout","time":14.095783385,"data":"For debugging consider passing CUDA_LAUNCH_BLOCKING=1\n"}
+,{"stream_name":"stdout","time":14.095792353,"data":"Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"}
+,{"stream_name":"stdout","time":14.095810192,"data":"\n"}
+,{"stream_name":"stdout","time":14.095815549,"data":"\n"}
+,{"stream_name":"stdout","time":14.095820356,"data":"--- try torch 2.5.1 cu121 (no numpy reinstall) ---\n"}
+,{"stream_name":"stdout","time":19.105918083,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 163.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":19.307942595,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 163.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":21.702967582,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 265.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":21.904854086,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 265.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":22.021748339,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 303.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":22.223602853,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 303.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":22.275106816,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 292.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":22.477171278,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 292.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":24.734173654,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 319.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":24.935955725,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 319.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":28.30072711,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 326.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":28.502511525,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 326.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":29.99781436,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 316.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":30.199601112,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 316.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":30.772720902,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 322.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":30.973707151,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 322.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":31.911182121,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 290.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":32.113199766,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 290.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":33.191766853,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 376.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":33.393919817,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 376.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":34.497482384,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 355.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":34.699600698,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 355.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":35.164670206,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 275.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":35.364599846,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 275.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":36.097301414,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 285.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":36.299402277,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 285.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":37.132107645,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 103.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":37.334188549,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 103.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":148.558048294,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":148.558084078,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":148.558095122,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":148.762272039,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":148.762301022,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":148.76230717,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":148.762312636,"data":"\n"}
+,{"stream_name":"stderr","time":148.762317502,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":148.762322941,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":148.762328195,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stdout","time":151.733658642,"data":"rc 0 out KERNEL_OK err \n"}
+,{"stream_name":"stdout","time":152.529892403,"data":"np/pd rc 0 out 2.0.2 2.3.3 err \n"}
+,{"stream_name":"stderr","time":154.800328605,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":154.800377666,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":154.937929804,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":154.93796142,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":155.520561053,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":155.826025994,"data":"[NbConvertApp] Writing 4965 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":158.163707578,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":158.948000349,"data":"[NbConvertApp] Writing 280941 bytes to __results__.html\n"}
+]

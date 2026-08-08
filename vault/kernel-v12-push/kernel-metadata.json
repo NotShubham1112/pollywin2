@@ -1,0 +1,15 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v12-bucket-moe",
+  "title": "PolyWin R2 v12 Chemistry Bucket MoE",
+  "code_file": "PolyWin_R2_v12_bucket_moe.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": [],
+  "model_sources": []
+}

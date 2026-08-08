@@ -37,7 +37,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -178,8 +180,10 @@
   },
   "active": "27eab7ebd83b9fd3",
   "lastOpenFiles": [
-    "PI1M.csv.md",
+    "Notebook Submission Requirement.md",
     "Tg.md",
+    "AISEHack 2.0 - Round 2 - MOC.md",
+    "PI1M.csv.md",
     "Nc.md",
     "EPS.md",
     "Eea.md",
@@ -198,7 +202,6 @@
     "Welcome.md",
     "Dataset Files.md",
     "Target Properties.md",
-    "Competition Overview.md",
-    "AISEHack 2.0 - Round 2 - MOC.md"
+    "Competition Overview.md"
   ]
 }
