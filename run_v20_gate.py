@@ -134,6 +134,11 @@ def run_gate(smoke=False, data_paths=None):
     cfg = _config()
     if smoke:
         cfg["smoke"] = True
+        # smoke=True forces the small config regardless of env (see brief).
+        cfg["pi_count"] = 300
+        cfg["d"] = 32
+        cfg["layers"] = 2
+        cfg["epochs"] = 1
     _seed_everything(cfg["seed"])
 
     print(
@@ -191,12 +196,16 @@ def run_gate(smoke=False, data_paths=None):
 
     mean_p14 = float(np.mean(list(r2_p14.values())))
     if abs(mean_p14 - P14_MEAN) > P14_TOL:
-        print(
-            f"[v20 gate] WARNING recomputed P14 mean {mean_p14:.4f} "
-            f"deviates from reference {P14_MEAN} (tol {P14_TOL})")
+        raise AssertionError(
+            f"recomputed P14 mean {mean_p14:.4f} deviates from reference "
+            f"{P14_MEAN} by more than {P14_TOL}; the mean gate would be "
+            f"misleading — P14 stays final")
 
     mean_v20 = float(np.mean(list(r2_v20.values())))
-    mean_delta = mean_v20 - P14_MEAN
+    # Mean gate compares against the recomputed honest P14 baseline so the
+    # verdict is self-consistent (worst_delta already uses the recomputed
+    # per-target baselines).
+    mean_delta = mean_v20 - mean_p14
     worst_delta = float(min(r2_v20[t] - r2_p14[t] for t in TARGETS))
     report = compute_gate_report(
         mean_delta, worst_delta, list(alphas.values()),
