@@ -24,6 +24,10 @@ def blend_3d(M_tr, y, g, alphas=ALPHAS, n_splits=5):
         Blended out-of-fold prediction per row, in input order.
     coefs_mean : np.ndarray (3,)
         Mean of the refit fold coefficients (one per arm).
+    best_alpha : float
+        Regularization alpha selected by the inner per-alpha OOF r2_score
+        sweep (ties keep the first/grid-lowest). Reported so the gate runner
+        can enforce the alpha <= 0.30 gate per target.
     """
     M_tr = np.asarray(M_tr, dtype=float)
     y = np.asarray(y, dtype=float)
@@ -31,9 +35,9 @@ def blend_3d(M_tr, y, g, alphas=ALPHAS, n_splits=5):
     n = len(y)
 
     # Never crash on degenerate input: a single row (or empty) yields the row's
-    # own label as OOF and zero coefficients.
+    # own label as OOF and zero coefficients; alpha is the grid-default.
     if n < 2:
-        return y.copy(), np.zeros(3)
+        return y.copy(), np.zeros(3), float(alphas[0])
 
     # Non-finite arms: replace NaN with column mean, then any residual
     # non-finite (all-NaN column) with 0.0. Verbatim from P14 fold_safe_blend.
@@ -44,7 +48,7 @@ def blend_3d(M_tr, y, g, alphas=ALPHAS, n_splits=5):
     # Fall back to a single Ridge at the first alpha on all rows.
     if len(np.unique(g)) < n_splits:
         lr = Ridge(alpha=alphas[0]).fit(M, y)
-        return lr.predict(M), lr.coef_
+        return lr.predict(M), lr.coef_, float(alphas[0])
 
     cv = list(GroupKFold(n_splits=n_splits).split(M, y, g))
 
@@ -65,4 +69,4 @@ def blend_3d(M_tr, y, g, alphas=ALPHAS, n_splits=5):
         lr = Ridge(alpha=besta).fit(M[tr], y[tr])
         oof[vk] = lr.predict(M[vk])
         coefs.append(lr.coef_)
-    return oof, np.mean(coefs, axis=0)
+    return oof, np.mean(coefs, axis=0), float(besta)
