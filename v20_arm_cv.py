@@ -53,7 +53,13 @@ def compute_trf_arm(pool_tr, pool_te, y, tt_tr, tt_te, g, n_splits=5, seed=42):
 
     global_mean = float(np.mean(y)) if n_tr else 0.0
 
-    if n_tr >= 2:
+    # GroupKFold cannot form n_splits folds from fewer groups; on such a
+    # degenerate pool (e.g. every row in one smiles group) skip the shared CV
+    # and fall back to per-target all-rows heads below. No leak: this only
+    # triggers when cross-validation folds are impossible.
+    n_groups = len(np.unique(g)) if n_tr else 0
+    degenerate = n_groups < n_splits
+    if n_tr >= 2 and not degenerate:
         fold = np.empty(n_tr, dtype=np.int64)
         gkf = GroupKFold(n_splits=n_splits)
         for f, (_, va) in enumerate(gkf.split(np.arange(n_tr), y, g)):
@@ -70,8 +76,9 @@ def compute_trf_arm(pool_tr, pool_te, y, tt_tr, tt_te, g, n_splits=5, seed=42):
             test[te_idx] = global_mean
             continue
 
-        if n_t < n_splits:
+        if n_t < n_splits or degenerate:
             # small-target fallback: one head on all rows, used for both sides
+            # (also the whole-pool fallback when groups < n_splits)
             if n_t < 2:
                 val = float(np.mean(y[tr_idx]))
                 oof[tr_idx] = val

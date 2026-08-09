@@ -201,3 +201,26 @@ def test_nan_free_on_single_row_group_and_must_not_warn_quiet():
                                 n_splits=5, seed=42)
     assert np.isfinite(oof).all()
     assert np.isfinite(test).all()
+
+
+def test_all_rows_share_one_group_never_crashes():
+    # degenerate pool: EVERY train row belongs to a single smiles group, and
+    # many targets have more rows than n_splits. GroupKFold(n_splits=5) cannot
+    # form 5 folds from 1 group and raises ValueError; the function must fall
+    # back to per-target all-rows heads instead of crashing.
+    rng = np.random.default_rng(5)
+    d = 6
+    n_tr, n_te = 40, 16
+    pool_tr = rng.standard_normal((n_tr, d)).astype(np.float32)
+    pool_te = rng.standard_normal((n_te, d)).astype(np.float32)
+    tt_tr = np.array([TARGETS[i % 7] for i in range(n_tr)])
+    tt_te = np.array([TARGETS[i % 7] for i in range(n_te)])
+    g = np.full(n_tr, "ONE_GROUP")  # every row shares the same smiles group
+    y = (2.0 * pool_tr[:, 0] + 0.5).astype(np.float32)
+
+    oof, test = compute_trf_arm(pool_tr, pool_te, y, tt_tr, tt_te, g,
+                                n_splits=5, seed=42)
+    assert oof.shape == (n_tr,)
+    assert test.shape == (n_te,)
+    assert np.isfinite(oof).all()
+    assert np.isfinite(test).all()
