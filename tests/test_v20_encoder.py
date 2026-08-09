@@ -49,6 +49,42 @@ def test_pool_echoes_nonpad_mean():
     assert np.allclose(pool, mean, atol=1e-6)
 
 
+def test_masked_positions_are_the_loss_targets():
+    """Regression: pretrain_encoder must learn to predict ORIGINAL tokens at
+    masked positions (MLM), not copy the visible unmasked tokens.
+
+    ids are structured (arithmetic progressions) so masked tokens ARE
+    predictable from context once the model is trained on them. After
+    pretraining, mean cross-entropy at masked positions (targets = original
+    tokens) must fall well below uniform guessing (ln V); the buggy loss
+    construction (masked positions -> -100) never trains them and stays at or
+    above uniform.
+    """
+    import torch.nn.functional as F
+    torch.manual_seed(0)
+    V, B, L = 40, 128, 24
+    start = torch.randint(4, V, (B, 1))
+    idx = torch.arange(L).unsqueeze(0)
+    ids = (start + idx) % (V - 4) + 4  # each row = arithmetic progression
+
+    torch.manual_seed(0)
+    m = MaskEncoder(vocab=V)
+    pretrain_encoder(m, ids, epochs=30, bs=64, lr=3e-3, seed=0, mask_p=0.3)
+
+    torch.manual_seed(123)  # fresh, deterministic eval mask
+    rand = torch.rand(ids.shape)
+    to_mask = (rand < 0.3) & (ids != 0)
+    masked = ids.clone()
+    masked[to_mask] = 2
+    logits, _ = m(masked)
+    nll = F.cross_entropy(logits.reshape(-1, V), ids.reshape(-1),
+                          reduction="none").reshape(ids.shape)[to_mask]
+    masked_nll = nll.mean().item()
+    assert masked_nll < np.log(V) - 0.5, (
+        f"masked-position NLL {masked_nll:.3f} not below uniform-ish bound "
+        f"{np.log(V) - 0.5:.3f}; masked positions are not being learned")
+
+
 def test_pretrain_deterministic_and_reduces_loss():
     torch.manual_seed(0)
     ids = torch.randint(4, 40, (24, 16))

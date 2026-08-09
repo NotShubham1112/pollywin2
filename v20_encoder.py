@@ -65,10 +65,16 @@ def pretrain_encoder(model, ids, epochs=2, bs=64, lr=3e-4, seed=42, mask_p=0.15)
             batch = ids[perm[start:start + bs]]
             rand = torch.rand(batch.shape, generator=generator)
             to_mask = (rand < mask_p) & (batch != 0)
-            targets = batch.clone()
-            targets[to_mask] = -100
+            targets = torch.full_like(batch, -100)
+            targets[to_mask] = batch[to_mask]
             masked = batch.clone()
             masked[to_mask] = mask_id
+            if not to_mask.any():
+                # no masked positions -> nothing to learn from this batch;
+                # record a finite 0.0 (cross_entropy on all-ignored targets
+                # would return nan) and skip the optimizer step
+                losses.append(0.0)
+                continue
             logits, _ = model(masked)
             loss = F.cross_entropy(logits.reshape(-1, model.vocab),
                                    targets.reshape(-1), ignore_index=-100)
