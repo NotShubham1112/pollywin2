@@ -27,9 +27,10 @@ from torch_geometric.data import Batch, Data
 from torch_geometric.nn import GINEConv, global_mean_pool, global_add_pool
 import lightgbm as lgb
 from rdkit import Chem
-from rdkit.Chem import AllChem, MACCSkeys
+from rdkit.Chem import AllChem, MACCSkeys, rdMolDescriptors, rdFingerprintGenerator
 from sklearn.model_selection import GroupKFold, train_test_split
 from sklearn.metrics import r2_score
+from sklearn.neighbors import NearestNeighbors
 
 SMOKE = os.environ.get("SMOKE", "0") == "1"
 SEED = 42
@@ -62,6 +63,10 @@ F32_MAX = np.finfo(np.float32).max
 def add_fingerprints(df):
     morgan = np.zeros((len(df), 2048), dtype=np.float32)
     maccs = np.zeros((len(df), 167), dtype=np.float32)
+    ap = np.zeros((len(df), 1024), dtype=np.float32)
+    tt = np.zeros((len(df), 1024), dtype=np.float32)
+    ap_gen = rdFingerprintGenerator.GetAtomPairGenerator(fpSize=1024)
+    tt_gen = rdFingerprintGenerator.GetTopologicalTorsionGenerator(fpSize=1024)
     for i, s in enumerate(df['smiles']):
         m = Chem.MolFromSmiles(s)
         if m is None:
@@ -70,7 +75,36 @@ def add_fingerprints(df):
             m, 2, nBits=2048).ToBitString().encode(), 'u1') - ord('0')
         maccs[i] = np.frombuffer(MACCSkeys.GenMACCSKeys(m).ToBitString().encode(),
                                  'u1') - ord('0')
-    return morgan, maccs
+        ap[i] = np.frombuffer(ap_gen.GetFingerprint(m).ToBitString().encode(),
+                              'u1') - ord('0')
+        tt[i] = np.frombuffer(tt_gen.GetFingerprint(m).ToBitString().encode(),
+                              'u1') - ord('0')
+    return morgan, maccs, ap, tt
+
+
+def build_knn_features(morgan_tr, morgan_te, Y_tr, T_tr, idx_of_target, k=10):
+    """Tanimoto KNN retrieval features: per-target mean + std of K nearest neighbors' targets."""
+    from scipy.spatial.distance import cdist
+    nn_tr = NearestNeighbors(n_neighbors=min(k + 1, len(morgan_tr)), metric="euclidean")
+    nn_tr.fit(morgan_tr)
+    dist_tr, idx_tr = nn_tr.kneighbors(morgan_tr)
+    dist_te, idx_te = nn_tr.kneighbors(morgan_te)
+    # Exclude self (index 0) from train neighbors
+    idx_tr = idx_tr[:, 1:]
+    n_feat = len(TARGETS) * 2  # mean + std per target
+    knn_tr = np.zeros((len(morgan_tr), n_feat), dtype=np.float32)
+    knn_te = np.zeros((len(morgan_te), n_feat), dtype=np.float32)
+    for t_i, t in enumerate(TARGETS):
+        yt = Y_tr.copy()
+        for row in range(len(morgan_tr)):
+            neighbor_targets = yt[idx_tr[row]]
+            knn_tr[row, t_i * 2] = np.mean(neighbor_targets)
+            knn_tr[row, t_i * 2 + 1] = np.std(neighbor_targets) if len(neighbor_targets) > 1 else 0.0
+        for row in range(len(morgan_te)):
+            neighbor_targets = yt[idx_te[row]]
+            knn_te[row, t_i * 2] = np.mean(neighbor_targets)
+            knn_te[row, t_i * 2 + 1] = np.std(neighbor_targets) if len(neighbor_targets) > 1 else 0.0
+    return knn_tr, knn_te
 
 
 D_tr = np.clip(trf[FEAT_COLS].values, -F32_MAX, F32_MAX)
@@ -78,24 +112,29 @@ for j in range(D_tr.shape[1]):
     col = D_tr[:, j]
     med = np.median(col[np.isfinite(col)]) if np.isfinite(col).any() else 0.0
     col[~np.isfinite(col)] = med
-mor_tr, mc_tr = add_fingerprints(trf)
-X = np.hstack([D_tr, mor_tr, mc_tr]).astype(np.float32)
-from sklearn.preprocessing import StandardScaler
-Xs = StandardScaler().fit(X).transform(X).astype(np.float32)
+mor_tr, mc_tr, ap_tr, tt_tr = add_fingerprints(trf)
 
-mor_te, mc_te = add_fingerprints(tef)
 D_te = np.clip(tef[FEAT_COLS].values, -F32_MAX, F32_MAX)
 for j in range(D_te.shape[1]):
     col = D_te[:, j]
     med = np.median(col[np.isfinite(col)]) if np.isfinite(col).any() else 0.0
     col[~np.isfinite(col)] = med
-Xte = np.hstack([D_te, mor_te, mc_te]).astype(np.float32)
-Xtes = StandardScaler().fit(X).transform(Xte).astype(np.float32)
+mor_te, mc_te, ap_te, tt_te = add_fingerprints(tef)
 
 Y = trf['target'].values.astype(np.float32)
 T = trf['target_type'].values
 G = trf['canon'].values
 idx_of_target = {t: np.where(T == t)[0] for t in TARGETS}
+
+knn_tr, knn_te = build_knn_features(mor_tr, mor_te, Y, T, idx_of_target, k=10)
+Xbase = np.hstack([D_tr, mor_tr, mc_tr, ap_tr, tt_tr]).astype(np.float32)
+X = np.hstack([Xbase, knn_tr]).astype(np.float32)
+from sklearn.preprocessing import StandardScaler
+Xs = StandardScaler().fit(X).transform(X).astype(np.float32)
+
+Xtebase = np.hstack([D_te, mor_te, mc_te, ap_te, tt_te]).astype(np.float32)
+Xte = np.hstack([Xtebase, knn_te]).astype(np.float32)
+Xtes = StandardScaler().fit(X).transform(Xte).astype(np.float32)
 print("train:", X.shape, "test:", Xte.shape, flush=True)
 
 

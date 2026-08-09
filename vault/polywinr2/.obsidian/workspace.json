@@ -180,6 +180,20 @@
   },
   "active": "27eab7ebd83b9fd3",
   "lastOpenFiles": [
+    "v15 EPSGradient Focus.md",
+    "v16 Cross-Target Decoder.md",
+    "v15 EPS/NC Focus.md",
+    "v15 EPS",
+    "P14 Full-PI1M Pretrain.md",
+    "v13 GBM + MT-GNN Blend.md",
+    "v12 Chemistry Bucket-MoE.md",
+    "v11 Fold-Safe Blend.md",
+    "v10 Pretrained GNN.md",
+    "v8 PI1M Pseudo Labelling.md",
+    "v7 Retrieval Augmented GBM.md",
+    "v6 Honest OOF Stack.md",
+    "v4 Baseline Stack.md",
+    "Experiments MOC.md",
     "Notebook Submission Requirement.md",
     "Tg.md",
     "AISEHack 2.0 - Round 2 - MOC.md",
@@ -192,16 +206,6 @@
     "Egc.md",
     "Leaderboard and Evaluation.md",
     "Baseline Model.md",
-    "SMILES.md",
-    "Legal and Privacy.md",
-    "Disqualification and Conduct.md",
-    "Prizes and Taxes.md",
-    "Submission Rules.md",
-    "Teams and Collaboration Rules.md",
-    "Eligibility Rules.md",
-    "Welcome.md",
-    "Dataset Files.md",
-    "Target Properties.md",
-    "Competition Overview.md"
+    "SMILES.md"
   ]
 }
