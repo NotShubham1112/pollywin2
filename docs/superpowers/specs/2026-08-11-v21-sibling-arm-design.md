@@ -39,6 +39,10 @@ bit-identical to P14.
   MoLFormer — violates §6.2.4), GHM/loss-reweighting (falsified by v15), non-linear
   Level-2 meta (falsified by v7/v12), seed-scaling heterogeneous GNNs (contradicts the
   near-ceiling blend finding).
+- **Noted for a future v22 (not now):** the sibling source could be the **MT-GNN OOF**
+  (its multi-task heads already output all 7 targets per row) or the average of the
+  LGBM + GNN OOF, inside the same leak-safe framework. v21 uses LGBM (`twin_scores`)
+  because it already exists and is provably fold-safe; do not build this now.
 
 ## 3. The single change
 
@@ -86,15 +90,27 @@ compare protocol as `vault/compare_p14.py` (GroupKFold(5) on canonical smiles, p
 R², Ridge blend over the same alpha grid).
 
 - **Gate 1 — leak audit:** sibling-feature ↔ true-label exact-match count = **0** across all
-  val folds.
-- **Gate 2 — OOF gain (distribution-shift emphasis, the check v16 skipped):** blend OOF mean
-  over **{eps, nc, ei}** ≥ P14 + **+0.003** (these are the starved targets the arm targets),
-  **and** overall blend OOF mean ≥ P14 + **+0.003**.
+  val folds. Absolute, non-negotiable.
+- **Gate 0 (diagnostic, informational, not a hard gate) — SIB-only signal probe:** before
+  any blending, report per-target `sib_only_r2[t]` = OOF R² of the sibling Ridge *alone*
+  (twin_scores-only, own GroupKFold) on target-`t` rows. If `sib_only_r2(eps/nc/ei)` ≈ 0,
+  the arm carries no exploitable cross-target information and is dead before blending —
+  strong stop signal. This answers "is there untapped signal at all?" before the blend
+  can mask it.
+- **Gate 2 — OOF gain (distribution-shift emphasis, the check v16 skipped):** tiered —
+  - **Soft success** (proceed to a Kaggle run, eyes open): blend OOF mean over **{eps, nc, ei}**
+    ≥ P14 + **+0.0015** **and** overall blend OOF mean ≥ P14 + **+0.0015**.
+  - **Strong success** (confident submit): ≥ **+0.003** on both.
+  - Tiering exists so a real +0.001–0.002 improvement (historically capable of LB movement at
+    this OOF level ≈0.864) is not rejected; +0.003 stays the bar for trusting the LB confirm.
 - **Gate 3 — worst-target guard:** no per-target OOF regression > **−0.003** vs P14.
+- **Pre-registered expectation:** prior is v21 honest OOF in **[0.8645, 0.8675]** (most likely
+  **+0.001 to +0.003**); public LB **0.885–0.888** plausible if it tracks; a jump to 0.892+
+  would surprise.
 - **Confirmatory (not gated):** public LB ≥ **0.886** (top-20 zone) on the Kaggle run; the
   notebook's own gate report must match the local gate report before the score is trusted.
-- **Fail → STOP:** any gate fails → keep **P14 (0.883)**, no v21 slot spent. Record the
-  numbers; do not re-tune gates post-hoc.
+- **Fail → STOP:** gate 1 fails, or gate 3 fails, or gate 2 fails at **both** tiers → keep
+  **P14 (0.883)**, no v21 slot spent. Record the numbers; do not re-tune gates post-hoc.
 - **No pseudo-labeling. No true-label sibling features. No test-row train-label lookup.
   No architecture change to P14 level-0. No new libraries (OSI-approved only).**
 
@@ -102,7 +118,8 @@ R², Ridge blend over the same alpha grid).
 
 - `vault/r2_sibling_validate.py` — **local gate harness** (CPU, minutes): recompute
   `twin_scores`/`lgb_test_te` from `r2_train_feat.pkl`/`r2_test_feat.pkl`, build the SIB
-  arm OOF, blend against cached P14 OOF, run gates 1–3. No GNN/pretrain retraining.
+  arm OOF + `sib_only_r2` diagnostic, blend against cached P14 OOF, run gates 0–3. No
+  GNN/pretrain retraining.
 - `build_v21_kaggle_nb.py` (fork of `build_v14_kaggle_nb.py` + SIB arm cell inserted at
   the level-0→blend junction as a CORE substitution; blend widened to 3 arms; in-notebook
   gate report; submission path unchanged) → `PolyWin_R2_v21_sibling_arm.ipynb`.
@@ -124,6 +141,6 @@ R², Ridge blend over the same alpha grid).
 
 ## 8. Result (to be filled after run)
 
-- [ ] Local gate harness: gates 1–3 pass/fail (report numbers).
+- [ ] Local gate harness: `sib_only_r2` diagnostic (gate 0) + gates 1–3 pass/fail (report numbers per tier).
 - [ ] Notebook smoke run: cells compile, smoke subset matches harness.
 - [ ] Kaggle full run: kernel URL, gate report, public LB, verdict.
