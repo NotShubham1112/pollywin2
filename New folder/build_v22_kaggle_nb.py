@@ -647,8 +647,16 @@ for t in TARGETS:
     r2_p14[t] = corr2(Y[idx], b2)
 
 mean_p14 = float(np.mean(list(r2_p14.values())))
-assert abs(mean_p14 - 0.8641) <= 0.005, (
-    f"recomputed P14 {mean_p14:.4f} deviates from reference 0.8641")
+if not SMOKE:
+    assert abs(mean_p14 - 0.8641) <= 0.005, (
+        f"recomputed P14 {mean_p14:.4f} deviates from reference 0.8641")
+else:
+    # SMOKE recomputes the P14 arms in-kernel at reduced fidelity
+    # (folds=2, 4 epochs, 2k samples, 1 GNN seed), so the in-kernel P14
+    # cannot reproduce the full-fidelity reference 0.8641. The gate verdict
+    # still runs below; only the plumbing sanity check is relaxed here.
+    print(f"[SMOKE] recomputed P14 {mean_p14:.4f} vs reference 0.8641 "
+          f"(deviation expected at reduced fidelity)", flush=True)
 mean_v22 = float(np.mean(list(r2_v22.values())))
 deltas = {t: r2_v22[t] - r2_p14[t] for t in TARGETS}
 eps_delta = float(np.mean([deltas[t] for t in EPS_NC_EI]))
