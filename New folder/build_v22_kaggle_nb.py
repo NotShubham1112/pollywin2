@@ -597,7 +597,7 @@ def corr2(y, o):
 
 # ---- BPE tokenizer on a PI1M sample (label-free) ----
 p1_path = find_input(INP, "PI1M.csv")
-p1_smiles = pd.read_csv(p1_path, nrows=V22_PI_COUNT)
+p1_smiles = pd.read_csv(p1_path, nrows=V22_PI_COUNT if V22_PI_COUNT > 0 else None)
 smi_col = "SMILES" if "SMILES" in p1_smiles.columns else "smiles"
 p1_smiles = p1_smiles[smi_col].astype(str).tolist()
 print("[v22] learning BPE on", len(p1_smiles), "PI1M rows", flush=True)
