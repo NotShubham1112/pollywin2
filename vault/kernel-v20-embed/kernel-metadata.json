@@ -1,0 +1,14 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v20-embed",
+  "title": "polywin r2 v20 embed",
+  "code_file": "PolyWin_R2_v20_embed_submit.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": []
+}

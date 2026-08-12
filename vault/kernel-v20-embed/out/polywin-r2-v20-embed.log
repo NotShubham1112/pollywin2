@@ -1,0 +1,79 @@
+[{"stream_name":"stderr","time":6.120254432,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.121434692,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.121440524,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.121444376,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.679277829,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.67930934,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.679314926,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.67931928,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":7.6706071179999995,"data":"installing rdkit\n"}
+,{"stream_name":"stderr","time":41.487274563,"data":"WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f1b3d10\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":41.694174488,"data":"WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f1b3d10\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":41.694214139,"data":"\n"}
+,{"stream_name":"stderr","time":41.694222082,"data":"WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f1b3d10\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":73.999583851,"data":"WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4ee98cb0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":74.205558945,"data":"WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4ee98cb0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":74.205599682,"data":"\n"}
+,{"stream_name":"stderr","time":74.205608577,"data":"WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4ee98cb0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":107.010830235,"data":"WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f080a40\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":107.21679401,"data":"WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f080a40\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":107.216831501,"data":"\n"}
+,{"stream_name":"stderr","time":107.216835014,"data":"WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4f080a40\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":141.022233355,"data":"WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eee6ff0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":141.229585791,"data":"WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eee6ff0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":141.229622039,"data":"\n"}
+,{"stream_name":"stderr","time":141.229627119,"data":"WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eee6ff0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":177.033483187,"data":"WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eedd9d0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":177.239544139,"data":"WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eedd9d0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":177.23958638,"data":"\n"}
+,{"stream_name":"stderr","time":177.239594416,"data":"WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('\u003cpip._vendor.urllib3.connection.HTTPSConnection object at 0x7d3a4eedd9d0\u003e: Failed to establish a new connection: [Errno -3] Temporary failure in name resolution')': /simple/rdkit/\n"}
+,{"stream_name":"stderr","time":209.052326285,"data":"ERROR: Could not find a version that satisfies the requirement rdkit (from versions: none)\n"}
+,{"stream_name":"stderr","time":209.052707232,"data":"ERROR: No matching distribution found for rdkit\n"}
+,{"stream_name":"stderr","time":209.135108777,"data":"ERROR: Could not find a version that satisfies the requirement rdkit (from versions: none)\n"}
+,{"stream_name":"stderr","time":209.135146834,"data":"ERROR: No matching distribution found for rdkit\n"}
+,{"stream_name":"stderr","time":209.135151956,"data":"\n"}
+,{"stream_name":"stderr","time":209.135169817,"data":"ERROR: Could not find a version that satisfies the requirement rdkit (from versions: none)\n"}
+,{"stream_name":"stderr","time":209.135188238,"data":"ERROR: No matching distribution found for rdkit\n"}
+,{"stream_name":"stderr","time":209.36696745,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":209.3670187,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":209.367025166,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":209.367299514,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":209.367330177,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":209.367365879,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":209.367551152,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":209.36756566,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":209.367569929,"data":"Exception encountered at \"In [1]\":\n"}
+,{"stream_name":"stderr","time":209.36757375,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":209.367577107,"data":"CalledProcessError                        Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":209.367581107,"data":"/tmp/ipykernel_24/2782830042.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":209.367584662,"data":"     12                (\"lightgbm\", \"lightgbm\"), (\"catboost\", \"catboost\"),\n"}
+,{"stream_name":"stderr","time":209.367589107,"data":"     13                (\"xgboost\", \"xgboost\"), (\"scipy\", \"scipy\")]:\n"}
+,{"stream_name":"stderr","time":209.36759267,"data":"---\u003e 14     ensure_pkg(_p, _n)\n"}
+,{"stream_name":"stderr","time":209.367596336,"data":"     15 \n"}
+,{"stream_name":"stderr","time":209.367599798,"data":"     16 # --- CUDA probe (no reinstall needed; Kaggle GPU has a working build) ---\n"}
+,{"stream_name":"stderr","time":209.367604865,"data":"\n"}
+,{"stream_name":"stderr","time":209.36760872,"data":"/tmp/ipykernel_24/2782830042.py in ensure_pkg(pkg, import_name)\n"}
+,{"stream_name":"stderr","time":209.367613504,"data":"      6     if importlib.util.find_spec(name) is None:\n"}
+,{"stream_name":"stderr","time":209.367616799,"data":"      7         print(\"installing\", pkg, flush=True)\n"}
+,{"stream_name":"stderr","time":209.367620288,"data":"----\u003e 8         subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", \"-q\",\n"}
+,{"stream_name":"stderr","time":209.367624332,"data":"      9                                \"--disable-pip-version-check\", pkg])\n"}
+,{"stream_name":"stderr","time":209.367629617,"data":"     10 \n"}
+,{"stream_name":"stderr","time":209.367632989,"data":"\n"}
+,{"stream_name":"stderr","time":209.367636797,"data":"/usr/lib/python3.12/subprocess.py in check_call(*popenargs, **kwargs)\n"}
+,{"stream_name":"stderr","time":209.367639926,"data":"    411         if cmd is None:\n"}
+,{"stream_name":"stderr","time":209.367643166,"data":"    412             cmd = popenargs[0]\n"}
+,{"stream_name":"stderr","time":209.367646559,"data":"--\u003e 413         raise CalledProcessError(retcode, cmd)\n"}
+,{"stream_name":"stderr","time":209.367650143,"data":"    414     return 0\n"}
+,{"stream_name":"stderr","time":209.367653289,"data":"    415 \n"}
+,{"stream_name":"stderr","time":209.36765665,"data":"\n"}
+,{"stream_name":"stderr","time":209.367670567,"data":"CalledProcessError: Command '['/usr/bin/python3', '-m', 'pip', 'install', '-q', '--disable-pip-version-check', 'rdkit']' returned non-zero exit status 1.\n"}
+,{"stream_name":"stderr","time":209.367674213,"data":"\n"}
+,{"stream_name":"stderr","time":211.49192735,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":211.491979237,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":211.638071124,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":211.638096458,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":212.271859537,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":212.574620476,"data":"[NbConvertApp] Writing 81354 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":214.968308838,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":215.994647766,"data":"[NbConvertApp] Writing 588995 bytes to __results__.html\n"}
+]

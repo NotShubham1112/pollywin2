@@ -8,8 +8,8 @@ import os, pathlib, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-NB = REPO / "PolyWin_R2_v11_reproduce.ipynb"
-GEN = REPO / "build_v12_kaggle_nb.py"
+NB = REPO / "notebooks/v11_reproduce/PolyWin_R2_v11_reproduce.ipynb"
+GEN = REPO / "src/notebook_builders/build_v12_kaggle_nb.py"
 
 def _build():
     env = dict(os.environ, POLYWIN_STAGE="v11")

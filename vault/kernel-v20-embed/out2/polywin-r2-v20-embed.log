@@ -1,0 +1,50 @@
+[{"stream_name":"stderr","time":6.560505438,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.560570393,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.560576342,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.560580262,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":7.150330757,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":7.150374445,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":7.150380468,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":7.150384811,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":8.205496224000001,"data":"installing rdkit\n"}
+,{"stream_name":"stdout","time":11.806495546,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 9.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":12.008703459,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 9.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.37577032,"data":"installing torch_geometric\n"}
+,{"stream_name":"stdout","time":16.706370962,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 4.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.831829135,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 62.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.908313988,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 4.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":16.908351138,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 62.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":48.36608881,"data":"device: cpu\n"}
+,{"stream_name":"stdout","time":48.367182375,"data":"----- v20 CONFIG -----\n"}
+,{"stream_name":"stdout","time":48.368317496,"data":"folds: 2 | GNN_SEEDS: 42,999,2025 | PRETRAIN_SAMPLE: 2000000\n"}
+,{"stream_name":"stdout","time":48.368996532,"data":"v20: PI_COUNT 20000 d 256 layers 4 epochs 2 seed 42\n"}
+,{"stream_name":"stdout","time":48.369763504,"data":"device: cpu | SMOKE: False | out: /kaggle/working\n"}
+,{"stream_name":"stderr","time":51.750134573,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":51.750174712,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":51.750212067,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":51.750748205,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":51.751353742,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":51.751371067,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":51.75138135,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":51.751394474,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":51.751397236,"data":"Exception encountered at \"In [3]\":\n"}
+,{"stream_name":"stderr","time":51.751399546,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":51.75140178,"data":"AssertionError                            Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":51.751404379,"data":"/tmp/ipykernel_23/2482848658.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":51.751408311,"data":"     92 train_path = find_input(INP, \"train.csv\")\n"}
+,{"stream_name":"stderr","time":51.751425199,"data":"     93 test_path = find_input(INP, \"test.csv\")\n"}
+,{"stream_name":"stderr","time":51.751429484,"data":"---\u003e 94 assert train_path and test_path, \"train.csv / test.csv not found in \" + INP\n"}
+,{"stream_name":"stderr","time":51.751433706,"data":"     95 \n"}
+,{"stream_name":"stderr","time":51.751437517,"data":"     96 tr = pd.read_csv(train_path)\n"}
+,{"stream_name":"stderr","time":51.75144147,"data":"\n"}
+,{"stream_name":"stderr","time":51.751445014,"data":"AssertionError: train.csv / test.csv not found in /kaggle/input/ppp-round-2\n"}
+,{"stream_name":"stderr","time":51.751448381,"data":"\n"}
+,{"stream_name":"stderr","time":54.013544348,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":54.013578225,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":54.166842897,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":54.166867916,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":54.850306206,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":55.156747287,"data":"[NbConvertApp] Writing 78667 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":57.629687905,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":58.718079784,"data":"[NbConvertApp] Writing 585027 bytes to __results__.html\n"}
+]

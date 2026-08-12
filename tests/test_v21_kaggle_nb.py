@@ -18,11 +18,11 @@ import ast, os, pathlib, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-GEN21 = REPO / "build_v21_kaggle_nb.py"
-GEN14 = REPO / "build_v14_kaggle_nb.py"
-NB21 = REPO / "PolyWin_R2_v21_sibling_arm.ipynb"
+GEN21 = REPO / "src/notebook_builders/build_v21_kaggle_nb.py"
+GEN14 = REPO / "src/notebook_builders/build_v14_kaggle_nb.py"
+NB21 = REPO / "notebooks/v21_sibling_arm/PolyWin_R2_v21_sibling_arm.ipynb"
 NB21_SMOKE = REPO / "PolyWin_R2_v21_sibling_arm_smoke.ipynb"
-NB14 = REPO / "PolyWin_R2_v14_p1m_pretrain.ipynb"
+NB14 = REPO / "notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb"
 
 # v14 cell-6 leaky markers that v21 must NOT contain (design §4): the full-train
 # true-label pivot table + physics-eps cell re-introduces the exact leak v21

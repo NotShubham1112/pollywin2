@@ -286,7 +286,7 @@ git commit -m "feat(decoder_v16): fold-safe learned cross-target arm"
 **Interfaces:**
 - Consumes: `decoder_v16.py` (as embedded cell text), CORE_A/CORE_B from `mt_gnn_v2.py` (identical extraction as v14), the P14 setup cell.
 - Produces: `PolyWin_R2_v16_cross_target_decoder.ipynb` when run.
-- The builder must define `DECODER = Path("decoder_v16.py").read_text(...)` and place it as **one code cell** between the CORE_B cell and the blend cell, preceded by a markdown cell titled `## 6. v16 Cross-Target Decoder — physics + learned arms (fold-safe)`.
+- The builder must define `DECODER = Path("src/core/decoder_v16.py").read_text(...)` and place it as **one code cell** between the CORE_B cell and the blend cell, preceded by a markdown cell titled `## 6. v16 Cross-Target Decoder — physics + learned arms (fold-safe)`.
 - The blend cell (currently `## 5`) is **rewritten** for 4 arms: `[GBM, MT, PHYS, LEARNED]` — with per-target Ridge on the rows that have at least the two base arms; global fill where arms NaN; final report `v16_blend_report.csv` + `blend_oof_test16.npz` (arrays: `oof_gbm`, `oof_mt`, `oof_phys`, `oop_learn`, `test_gbm`, `test_mt`, `test_phys`, `test_learn`, `y_all`, `g_all`, `t_all`) + `submission_v16.csv`.
 - The setup cell config `WORK = vault/pipeline_out_v16@SUFFIX@` and `INP` stay as-is (v14 shape, just folder name swap).
 
@@ -299,10 +299,10 @@ import ast, os, pathlib, re, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-GEN16 = REPO / "build_v16_kaggle_nb.py"
-GEN14 = REPO / "build_v14_kaggle_nb.py"
-NB16 = REPO / "PolyWin_R2_v16_cross_target_decoder.ipynb"
-NB14 = REPO / "PolyWin_R2_v14_p1m_pretrain.ipynb"
+GEN16 = REPO / "src/notebook_builders/build_v16_kaggle_nb.py"
+GEN14 = REPO / "src/notebook_builders/build_v14_kaggle_nb.py"
+NB16 = REPO / "notebooks/v16_cross_target/PolyWin_R2_v16_cross_target_decoder.ipynb"
+NB14 = REPO / "notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb"
 
 def _cell_list(nb_path):
     nb = nbformat.read(str(nb_path), as_version=4)
@@ -375,8 +375,8 @@ def test_decoder_cell_text_matches_file():
 - [ ] **Step 3: Write `build_v16_kaggle_nb.py`**
 
 Structure (mirror `build_v14_kaggle_nb.py` exactly, with these diffs):
-- `OUT_NB = "PolyWin_R2_v16_cross_target_decoder.ipynb"`.
-- Import decoder: `DECODER_SRC = pathlib.Path("decoder_v16.py").read_text(encoding="utf-8")`. The decoder becomes a cell `P(DECODER_SRC)`.
+- `OUT_NB = "notebooks/v16_cross_target/PolyWin_R2_v16_cross_target_decoder.ipynb"`.
+- Import decoder: `DECODER_SRC = pathlib.Path("src/core/decoder_v16.py").read_text(encoding="utf-8")`. The decoder becomes a cell `P(DECODER_SRC)`.
 - The blend cell (replaces v14 §5) is a new `P(BLEND_CELL)` string. `BLEND_CELL` includes:
 
 ```python

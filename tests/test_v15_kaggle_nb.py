@@ -17,10 +17,10 @@ import ast, os, pathlib, re, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-GEN15 = REPO / "build_v15_kaggle_nb.py"
-GEN14 = REPO / "build_v14_kaggle_nb.py"
-NB15 = REPO / "PolyWin_R2_v15_epsnc_focus.ipynb"
-NB14 = REPO / "PolyWin_R2_v14_p1m_pretrain.ipynb"
+GEN15 = REPO / "src/notebook_builders/build_v15_kaggle_nb.py"
+GEN14 = REPO / "src/notebook_builders/build_v14_kaggle_nb.py"
+NB15 = REPO / "notebooks/v15_epsnc_focus/PolyWin_R2_v15_epsnc_focus.ipynb"
+NB14 = REPO / "notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb"
 
 PLAIN_LINE = "g.w = torch.tensor([1.0 / freq[row.target_type]], dtype=torch.float)"
 BOOST_LINE = ("g.w = torch.tensor([1.0 / freq[row.target_type] "

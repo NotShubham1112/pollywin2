@@ -1,6 +1,18 @@
 __pycache__/
 *.pyc
 
+# --- local agent / tooling scratch (not competition code) ---
+.venv_intel/
+.kilo/
+.superpowers/
+.firecrawl/
+.claude/
+sandbox-opencode/
+hack_skills/
+session-ses_*.md
+codex.md
+smoke*.txt
+
 # smoke-test validation copy (regenerated via build_pipeline_nb.py)
 smoke.ipynb
 

@@ -13,10 +13,10 @@ import ast, os, pathlib, re, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-GEN16 = REPO / "build_v16_kaggle_nb.py"
-GEN14 = REPO / "build_v14_kaggle_nb.py"
-NB16 = REPO / "PolyWin_R2_v16_cross_target_decoder.ipynb"
-NB14 = REPO / "PolyWin_R2_v14_p1m_pretrain.ipynb"
+GEN16 = REPO / "src/notebook_builders/build_v16_kaggle_nb.py"
+GEN14 = REPO / "src/notebook_builders/build_v14_kaggle_nb.py"
+NB16 = REPO / "notebooks/v16_cross_target/PolyWin_R2_v16_cross_target_decoder.ipynb"
+NB14 = REPO / "notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb"
 
 
 def _cell_list(nb_path):
@@ -66,7 +66,7 @@ def test_v16_cores_identical_to_v14():
 
 
 def test_v16_decoder_cell_verbatim_from_module():
-    src = (REPO / "decoder_v16.py").read_text(encoding="utf-8").rstrip("\n")
+    src = (REPO / "src/core/decoder_v16.py").read_text(encoding="utf-8").rstrip("\n")
     _, _, c16 = _build16()
     assert any(c.rstrip("\n") == src for c in c16), "decoder module must be one verbatim cell"
 

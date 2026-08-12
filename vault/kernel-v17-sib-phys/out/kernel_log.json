@@ -1,0 +1,90 @@
+[{"stream_name":"stderr","time":6.559601073,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.559673831,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.559678058,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.559680772,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":7.165500838,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":7.16553438,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":7.165537982,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":7.16554057,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":8.225196557,"data":"installing rdkit\n"}
+,{"stream_name":"stdout","time":10.832126852,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 54.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":11.034618069,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.4/37.4 MB 54.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.549591318000001,"data":"installing torch_geometric\n"}
+,{"stream_name":"stdout","time":15.733421342,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 2.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.896280898,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 30.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.93553521,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.4/64.4 kB 2.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":15.935593363,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 30.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":24.651315042,"data":"CUDA kernel missing; installing torch 2.5.1 (cu121, supports P100 sm_60)...\n"}
+,{"stream_name":"stdout","time":29.004987463,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 306.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":29.207303911,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 780.4/780.4 MB 306.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":31.725026528,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 369.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":31.926984065,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 369.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":32.040198273,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 335.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":32.242095337,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 335.7 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":32.326992374,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 350.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":32.52898438,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.1/14.1 MB 350.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":34.893500641,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 360.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":35.09638985,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 664.8/664.8 MB 360.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.350843512,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 371.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":38.559242526,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 371.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":40.017697049,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 334.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":40.219942307,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 334.8 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":40.653882549,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 364.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":40.855837596,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 364.5 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":41.72959485,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 275.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":41.931637469,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 275.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":42.964718304,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 348.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":43.166772062,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 348.2 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":44.395356122,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 366.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":44.597760514,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.7/188.7 MB 366.4 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":45.191545568,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 240.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":45.394322268,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 99.1/99.1 kB 240.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":46.113821101,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 298.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":46.316087574,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 209.6/209.6 MB 298.9 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":46.95544733,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 81.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":47.157973077,"data":"   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 81.1 MB/s eta 0:00:00\n"}
+,{"stream_name":"stderr","time":164.008214639,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":164.008252016,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":164.008257935,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":164.214591748,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":164.214619679,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":164.214625467,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":164.214630773,"data":"\n"}
+,{"stream_name":"stderr","time":164.214635603,"data":"ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\n"}
+,{"stream_name":"stderr","time":164.214641055,"data":"torchaudio 2.10.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stderr","time":164.214646175,"data":"torchvision 0.25.0+cu128 requires torch==2.10.0, but you have torch 2.5.1+cu121 which is incompatible.\n"}
+,{"stream_name":"stdout","time":167.065018222,"data":"post-reinstall probe rc: 0\n"}
+,{"stream_name":"stdout","time":183.986107159,"data":"GNN_SEEDS = 42,999,2025\n"}
+,{"stream_name":"stdout","time":184.120911984,"data":"device: cuda\n"}
+,{"stream_name":"stdout","time":184.122397965,"data":"----- P14 CONFIG -----\n"}
+,{"stream_name":"stdout","time":184.123268645,"data":"PRETRAIN_SAMPLE = 2000000 | PRETRAIN_EPOCHS = 10\n"}
+,{"stream_name":"stdout","time":184.123934306,"data":"device: cuda | SMOKE: False | folds: 5 | out: /kaggle/working\n"}
+,{"stream_name":"stderr","time":186.806768312,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":186.806805153,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":186.806811245,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":186.806977828,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":186.807004862,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":186.807212586,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":186.807337034,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":186.807344848,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":186.807349356,"data":"Exception encountered at \"In [3]\":\n"}
+,{"stream_name":"stderr","time":186.807352971,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":186.807356499,"data":"AssertionError                            Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":186.807359943,"data":"/tmp/ipykernel_23/438038921.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":186.807363914,"data":"     91           \"FracC\", \"FracN\", \"FracO\", \"FracS\", \"FracF\", \"FracHetero\",\n"}
+,{"stream_name":"stderr","time":186.807367795,"data":"     92           \"RatioSingle\", \"RatioDouble\", \"RatioAro\"]\n"}
+,{"stream_name":"stderr","time":186.807371457,"data":"---\u003e 93 assert len(FNAMES) == 33\n"}
+,{"stream_name":"stderr","time":186.807374871,"data":"     94 \n"}
+,{"stream_name":"stderr","time":186.807378244,"data":"     95 train_path = find_input(INP, \"train.csv\")\n"}
+,{"stream_name":"stderr","time":186.80738181,"data":"\n"}
+,{"stream_name":"stderr","time":186.807384961,"data":"AssertionError: \n"}
+,{"stream_name":"stderr","time":186.807388127,"data":"\n"}
+,{"stream_name":"stderr","time":188.925827379,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":188.925864094,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":189.066403314,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":189.066430836,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":189.74260731,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":190.053777142,"data":"[NbConvertApp] Writing 74338 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":192.673224519,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":193.704170917,"data":"[NbConvertApp] Writing 581434 bytes to __results__.html\n"}
+]

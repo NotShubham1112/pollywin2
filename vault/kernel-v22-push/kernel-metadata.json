@@ -1,0 +1,14 @@
+{
+  "id": "shubhamkambli11/polywin-r2-v22-bert-arm",
+  "title": "polywin r2 v22 bert arm",
+  "code_file": "PolyWin_R2_v22_bert_arm.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "competition_sources": [
+    "ppp-round-2"
+  ],
+  "dataset_sources": []
+}

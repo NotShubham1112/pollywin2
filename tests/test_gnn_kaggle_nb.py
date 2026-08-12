@@ -7,7 +7,7 @@ import pathlib, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-NB = REPO / "PolyWin_R2_v9_GNN_kaggle.ipynb"
+NB = REPO / "notebooks/v9_gnn/PolyWin_R2_v9_GNN_kaggle.ipynb"
 GEN = REPO / "build_gnn_kaggle_nb.py"
 
 def _build():

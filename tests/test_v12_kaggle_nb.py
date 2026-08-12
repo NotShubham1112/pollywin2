@@ -7,8 +7,8 @@ import pathlib, subprocess, sys
 import nbformat
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
-NB = REPO / "PolyWin_R2_v12_bucket_moe.ipynb"
-GEN = REPO / "build_v12_kaggle_nb.py"
+NB = REPO / "notebooks/v12_bucket_moe/PolyWin_R2_v12_bucket_moe.ipynb"
+GEN = REPO / "src/notebook_builders/build_v12_kaggle_nb.py"
 
 def _build():
     subprocess.run([sys.executable, str(GEN)], cwd=str(REPO), check=True,
