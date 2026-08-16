@@ -52,6 +52,7 @@ A disciplined, evidence-driven campaign to predict seven polymer properties (`ee
 
 - **Train:** 7,409 rows · **Test:** 4,940 rows.
 - **External corpus:** `PI1M.csv` (~995k unlabeled polymers) — used **only for pretraining** the GINE encoder, never as labels.
+  - **Provenance:** shipped in this repo at `competition/data/raw/PI1M.csv` (47.5 MB, git-tracked). It is the exact file the competition serves at `/kaggle/input/ppp-round-2/PI1M.csv`; if you pull a fresh Kaggle copy, drop it at the same path to reproduce the pretrain step.
 - **Public LB** is a 37% slice of test; **Private LB** is the remaining 63% and decides final standing.
 
 ---
@@ -91,6 +92,7 @@ train.csv ──► RDKit + Morgan   │
 ```
 ploywin-r2/
 ├── README.md                          # this file
+├── requirements.txt                   # pinned local env (torch==2.5.1, matches Kaggle kernel)
 ├── competition/
 │   ├── data/raw/                      # train.csv, test.csv, PI1M.csv (cached)
 │   └── rules/                         # official Kaggle rules
@@ -174,6 +176,10 @@ The canonical production notebook is **`notebooks/v14_p1m_pretrain/PolyWin_R2_v1
 **Local reproduction** (smoke-tested where possible):
 
 ```bash
+# 0. Create the pinned environment (Python 3.10+; torch==2.5.1 matches every submitted kernel)
+python -m venv .venv && .venv\Scripts\activate
+pip install -r requirements.txt
+
 # 1. (Optional) regenerate the OOF features
 python src/pipeline/make_smoke.py
 

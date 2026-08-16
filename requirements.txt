@@ -1,0 +1,41 @@
+# PolyWin R2 — local reproduction environment (Python 3.10+)
+# Canonical runtime is the Kaggle `ppp-round-2` kernel (Python 3.10), which is
+# what produced the submitted P14 notebook; every build_*_kaggle_nb.py pins
+# torch==2.5.1 inline. These floors match that stack and are used for local
+# smoke / gate runs (src/, tests/, src/notebook_builders/).
+
+# Core numeric / data
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+
+# Scikit-learn validation & blending (GroupKFold, Ridge, StandardScaler)
+scikit-learn>=1.3
+
+# GBM trio + HistGradientBoosting
+lightgbm>=4.0
+xgboost>=2.0
+catboost>=1.2
+
+# Cheminformatics (descriptors, Morgan / MACCS / AtomPair fingerprints)
+rdkit>=2024.3.6
+
+# Deep learning — pinned to the version used by every submitted notebook
+torch==2.5.1
+torch-geometric>=2.5
+
+# Visualization / reporting
+matplotlib>=3.7
+seaborn>=0.13
+
+# Notebook tooling — programmatic .py -> .ipynb builders + smoke execution
+nbformat>=5.7
+nbconvert>=7.0
+nbclient>=0.8
+jupyter>=1.0
+
+# Tests
+pytest>=7.0
+
+# Kaggle CLI (push / fetch kernel artifacts)
+kaggle>=1.6
