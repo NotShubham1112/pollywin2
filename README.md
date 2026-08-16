@@ -95,7 +95,7 @@ ploywin-r2/
 ├── requirements.txt                   # pinned local env (torch==2.5.1, matches Kaggle kernel)
 ├── competition/
 │   ├── data/raw/                      # train.csv, test.csv, PI1M.csv (cached)
-│   └── rules/                         # official Kaggle rules
+│   └── rules/                         # official Kaggle rules + AISEHack eligibility clause
 ├── notebooks/
 │   ├── exploration/                   # AISEHack_Round2_Pipeline.ipynb
 │   ├── v9_gnn/                        # GNN arm exploration (v9)
