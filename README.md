@@ -5,6 +5,8 @@
 
 A disciplined, evidence-driven campaign to predict seven polymer properties (`eea, egb, egc, ei, eps, nc, tg`) from SMILES. Engineered as a per-target **GBM + Graph Neural Network Ridge blend** over a 5-fold GroupKFold on canonical SMILES, with a self-supervised MT-GNN encoder pretrained on the full ~995k-molecule PI1M archive. Branched into fifteen pre-registered experiments; two hypotheses accepted, the rest cleanly falsified.
 
+> **⛳ Canonical submission — read this first.** The **only** method submitted in Round 2 is **P14** (public LB **0.883**, submission `55346358`). Its canonical repo artifact is **`notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb`**, generated from source-of-truth builder **`src/notebook_builders/build_v14_kaggle_nb.py`**. Everything else under `notebooks/` (v9–v22, sibling/BERT arms, failed experiments) is the **research record only — none of it is the submitted method**.
+
 ---
 
 ## 🏁 Final Submission
@@ -14,7 +16,8 @@ A disciplined, evidence-driven campaign to predict seven polymer properties (`ee
 | **Competition** | [AISEHack 2.0 — Polymer Property Prediction: Round 2](https://www.kaggle.com/competitions/ppp-round-2) |
 | **Metric** | Unweighted mean R² over 7 targets |
 | **Primary notebook** | [PolyWin R2 v14 — P1M Pretrain (P14)](https://www.kaggle.com/code/shubhamkambli11/polywin-r2-v14-p1m-pretrain) |
-| **Additional model notebook** | [PolyWin R2 v21 — Sibling Arm](https://www.kaggle.com/code/shubhamkambli11/polywin-r2-v21-sibling-arm) |
+| **Canonical repo artifact** | `notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb` |
+| **Additional model notebook** | [PolyWin R2 v21 — Sibling Arm](https://www.kaggle.com/code/shubhamkambli11/polywin-r2-v21-sibling-arm) (research only — not submitted) |
 | **Public LB** | **0.883** (submission `55346358`) |
 | **Code repository** | [github.com/NotShubham1112/pollywin2](https://github.com/NotShubham1112/pollywin2) |
 | **Team name** | Cosmic |
@@ -51,7 +54,7 @@ A disciplined, evidence-driven campaign to predict seven polymer properties (`ee
 | `tg`  | Glass Transition Temperature | varies | °C |
 
 - **Train:** 7,409 rows · **Test:** 4,940 rows.
-- **External corpus:** `PI1M.csv` (~995k unlabeled polymers) — used **only for pretraining** the GINE encoder, never as labels.
+- **Competition-provided auxiliary corpus:** `PI1M.csv` (~995k unlabeled polymers) — the exact file the competition serves at `/kaggle/input/ppp-round-2/PI1M.csv`; used **only for self-supervised pretraining**, never as labels.
   - **Provenance:** shipped in this repo at `competition/data/raw/PI1M.csv` (47.5 MB, git-tracked). It is the exact file the competition serves at `/kaggle/input/ppp-round-2/PI1M.csv`; if you pull a fresh Kaggle copy, drop it at the same path to reproduce the pretrain step.
 - **Public LB** is a 37% slice of test; **Private LB** is the remaining 63% and decides final standing.
 
