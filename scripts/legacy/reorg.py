@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 
 def run_git_mv(src, dst):
     """Move a tracked file using git mv, creating directories as needed."""

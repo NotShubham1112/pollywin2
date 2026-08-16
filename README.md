@@ -98,10 +98,19 @@ ploywin-r2/
 │   └── rules/                         # official Kaggle rules
 ├── notebooks/
 │   ├── exploration/                   # AISEHack_Round2_Pipeline.ipynb
+│   ├── v9_gnn/                        # GNN arm exploration (v9)
+│   ├── v10_pretrain/                  # PI1M pretrain experiments (v10)
+│   ├── v11_reproduce/                 # v11 reproduction (compliant floor)
+│   ├── v12_bucket_moe/                # chemistry bucket-MoE (v12)
+│   ├── v13_blend/                     # GBM + MT-GNN blend (v13)
+│   ├── v13_specialist/                # small-five multi-task specialist (v13)
+│   ├── v14_p14_baseline/              # P14 full-PI1M pretrain (FINAL)
 │   ├── v15_epsnc_focus/               # rejected hypothesis
 │   ├── v16_cross_target/              # cross-target decoder (gate PASS, LB FAIL)
 │   ├── v21_sibling_arm/               # sibling Ridge arm
 │   └── v22_bert_arm/                  # self-trained BERT/RoBERTa SMILES encoder
+├── scripts/
+│   └── legacy/                        # phase-1 experiment scripts (exp2/3/4, r2_phase1, reorg)
 ├── src/
 │   ├── core/                          # mt_gnn_v2.py, decoder_v16.py
 │   ├── experiments/                   # per-experiment scripts
@@ -114,7 +123,8 @@ ploywin-r2/
 │   ├── pipeline_out*/                 # cached OOF predictions, gate reports
 │   └── polywinr2/                     # Obsidian lab notebooks (research MOC)
 ├── docs/
-│   └── lab-postmortem-2026-08-08.md   # full post-mortem of the campaign
+│   ├── lab-postmortem-2026-08-08.md   # full post-mortem of the campaign
+│   └── session.md                     # working session journal
 └── hackathon_rules/                   # local copy of rules
 ```
 
@@ -171,7 +181,7 @@ ploywin-r2/
 
 ## 🚀 Reproducing P14
 
-The canonical production notebook is **`notebooks/v14_p1m_pretrain/PolyWin_R2_v14_p1m_pretrain.ipynb`** (also published on Kaggle as the primary submission).
+The canonical production notebook is **`notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb`** (also published on Kaggle as the primary submission).
 
 **Local reproduction** (smoke-tested where possible):
 
@@ -190,7 +200,7 @@ python src/core/mt_gnn_v2.py --pretrain --epochs 10 --data competition/data/raw/
 python src/notebook_builders/build_v14_kaggle_nb.py
 
 # 4. Run the executable notebook
-jupyter nbconvert --to notebook --execute notebooks/v14_p1m_pretrain/PolyWin_R2_v14_p1m_pretrain.ipynb
+jupyter nbconvert --to notebook --execute notebooks/v14_p14_baseline/PolyWin_R2_v14_p1m_pretrain.ipynb
 ```
 
 **Kaggle reproduction** (recommended):
